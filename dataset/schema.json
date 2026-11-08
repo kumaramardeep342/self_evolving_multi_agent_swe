@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AutomotiveVModelBenchmarkScenario",
+  "type": "object",
+  "required": [
+    "scenario_id",
+    "metadata",
+    "regulatory_provenance",
+    "input_context",
+    "ground_truth"
+  ],
+  "properties": {
+    "scenario_id": {
+      "type": "string",
+      "pattern": "^AUTO-(LONG|LAT|CRUISE|SOTIF)-[0-9]{3}$",
+      "description": "Unique scenario ID (e.g., AUTO-LONG-001, AUTO-LAT-005)"
+    },
+    
+    "metadata": {
+      "type": "object",
+      "required": ["domain", "sub_system", "target_feature", "target_asil"],
+      "properties": {
+        "domain": { "type": "string", "enum": ["ADAS", "System Safety"] },
+        "sub_system": { 
+          "type": "string", 
+          "enum": ["Longitudinal Control", "Lateral Control", "Integrated Cruising", "SOTIF / Sensor Degraded"] 
+        },
+        "target_feature": { "type": "string" },
+        "target_asil": { "type": "string", "enum": ["QM", "ASIL_A", "ASIL_B", "ASIL_C", "ASIL_D"] },
+        "v_model_scope": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["SYS.2", "SWE.1", "SYS.5", "SWE.6"] }
+        }
+      }
+    },
+
+    "regulatory_provenance": {
+      "type": "object",
+      "required": ["primary_source_doc", "doc_number", "specific_clause", "benchmark_role"],
+      "properties": {
+        "primary_source_doc": { "type": "string", "description": "PDF name from your 32-document table" },
+        "doc_number": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "specific_clause": { "type": "string", "description": "Exact clause or table reference, e.g., Clause 5.2.1 or Table 4" },
+        "benchmark_role": { 
+          "type": "string", 
+          "enum": ["Requirement Decomposition", "Requirement Generation", "TestCase Generation", "Full Top-V Tier"] 
+        }
+      }
+    },
+
+    "input_context": {
+      "type": "object",
+      "description": "THE ONLY DATA EXPOSED TO CANDIDATE MODELS DURING EVALUATION",
+      "required": ["user_intent", "operational_design_domain", "interface_signals"],
+      "properties": {
+        "user_intent": {
+          "type": "string",
+          "description": "High-level stakeholder/customer vehicle feature intent statement"
+        },
+        "operational_design_domain": {
+          "type": "object",
+          "required": ["speed_range_kph", "road_type", "environmental_conditions"],
+          "properties": {
+            "speed_range_kph": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+            "road_type": { "type": "string" },
+            "environmental_conditions": { "type": "string" }
+          }
+        },
+        "interface_signals": {
+          "type": "object",
+          "required": ["input_signals", "output_signals"],
+          "properties": {
+            "input_signals": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "data_type", "unit", "valid_range"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "data_type": { "type": "string", "enum": ["float", "int", "boolean", "enum"] },
+                  "unit": { "type": "string" },
+                  "valid_range": { "type": "array" }
+                }
+              }
+            },
+            "output_signals": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "data_type", "unit", "valid_range"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "data_type": { "type": "string", "enum": ["float", "int", "boolean", "enum"] },
+                  "unit": { "type": "string" },
+                  "valid_range": { "type": "array" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "ground_truth": {
+      "type": "object",
+      "description": "OFFICIAL EVALUATION TARGETS USED BY THE AUTOMATED EVALUATION HARNESS",
+      "required": ["decomposition_targets", "formal_requirements", "verification_test_cases"],
+      "properties": {
+        "decomposition_targets": {
+          "type": "array",
+          "description": "Ground truth breakdown into modular operating sub-intents",
+          "items": {
+            "type": "object",
+            "required": ["sub_intent_id", "operational_mode", "description"],
+            "properties": {
+              "sub_intent_id": { "type": "string" },
+              "operational_mode": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "formal_requirements": {
+          "type": "array",
+          "description": "Ground truth ASPICE SYS.2 / ISO 26262 formal specifications",
+          "items": {
+            "type": "object",
+            "required": ["req_id", "parent_sub_intent_id", "statement", "preconditions", "trigger", "postconditions", "timing_ftti_ms", "asil_rating"],
+            "properties": {
+              "req_id": { "type": "string" },
+              "parent_sub_intent_id": { "type": "string" },
+              "statement": { "type": "string" },
+              "preconditions": { "type": "string" },
+              "trigger": { "type": "string" },
+              "postconditions": { "type": "string" },
+              "timing_ftti_ms": { "type": "number" },
+              "asil_rating": { "type": "string", "enum": ["QM", "ASIL_A", "ASIL_B", "ASIL_C", "ASIL_D"] }
+            }
+          }
+        },
+        "verification_test_cases": {
+          "type": "array",
+          "description": "Ground truth ASPICE SYS.5 / SWE.6 qualification assertions",
+          "items": {
+            "type": "object",
+            "required": ["test_id", "parent_req_id", "test_category", "stimulus_vector", "expected_assertions", "tolerances"],
+            "properties": {
+              "test_id": { "type": "string" },
+              "parent_req_id": { "type": "string" },
+              "test_category": { 
+                "type": "string", 
+                "enum": ["Nominal_Operational", "Boundary_Equivalence", "Negative_Fault_Injection", "Timing_Tolerance"] 
+              },
+              "stimulus_vector": { "type": "object" },
+              "expected_assertions": { "type": "string" },
+              "tolerances": { "type": "object" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

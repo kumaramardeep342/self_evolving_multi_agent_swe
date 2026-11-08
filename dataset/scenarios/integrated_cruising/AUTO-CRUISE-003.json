@@ -1,0 +1,78 @@
+{
+  "scenario_id": "AUTO-CRUISE-003",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Integrated Cruising",
+    "target_feature": "Intelligent Adaptive Cruise Control (iACC) Speed Limit Adaptation",
+    "target_asil": "ASIL_A",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "ADAS Regulations (EU GSR) / euro_ncap_protocol_assisted_driving_v11",
+    "doc_number": 4,
+    "specific_clause": "EU GSR Slide 11, 22 & Euro NCAP Assisted Driving v1.1 Section 3.1",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall integrate front camera traffic sign recognition and digital map data into the cruise control system (iACC). When passing from a 100 km/h zone into an 80 km/h speed limit zone, the system must recognize the posted limit and proactively initiate deceleration so the front axle reaches the new speed limit boundary at or below 80 km/h without harsh passenger jerk.",
+    "operational_design_domain": {
+      "speed_range_kph": [40.0, 130.0],
+      "road_type": "Interurban highway with explicit regulatory speed limit signage",
+      "environmental_conditions": "Daylight, legible signage conforming to national standards"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 200.0]},
+        {"name": "DetectedSpeedLimit_kph", "data_type": "float", "unit": "km/h", "valid_range": [20.0, 140.0]},
+        {"name": "DistToSpeedSign_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 250.0]},
+        {"name": "iACC_ModeEnabled_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ],
+      "output_signals": [
+        {"name": "TargetSetSpeed_kph", "data_type": "float", "unit": "km/h", "valid_range": [20.0, 140.0]},
+        {"name": "iACC_DecelCommand_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 4.0]},
+        {"name": "HMI_SpeedPrompt_kph", "data_type": "float", "unit": "km/h", "valid_range": [20.0, 140.0]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-CRUISE-ISA-01",
+        "operational_mode": "Speed_Limit_Acquisition_and_Prompt",
+        "description": "Acquire upcoming speed limit sign and update HMI advisory status"
+      },
+      {
+        "sub_intent_id": "SUB-CRUISE-ISA-02",
+        "operational_mode": "Anticipatory_Speed_Adjustment",
+        "description": "Calculate deceleration trajectory so vehicle conforms to new speed limit prior to sign passage"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-CRUISE-005",
+        "parent_sub_intent_id": "SUB-CRUISE-ISA-02",
+        "statement": "When iACC_ModeEnabled_flag is true, VehSpd_kph == 100.0 km/h, and DetectedSpeedLimit_kph decreases to 80.0 km/h at DistToSpeedSign_m <= 150.0 m, TargetSetSpeed_kph shall update to 80.0 km/h and iACC_DecelCommand_mps2 shall assert smooth deceleration (<= 2.0 m/s^2) such that VehSpd_kph <= 80.0 km/h when DistToSpeedSign_m == 0.0 m.",
+        "preconditions": "iACC_ModeEnabled_flag == true and DetectedSpeedLimit_kph < VehSpd_kph",
+        "trigger": "DetectedSpeedLimit_kph == 80.0 and DistToSpeedSign_m <= 150.0",
+        "postconditions": "TargetSetSpeed_kph == 80.0 and iACC_DecelCommand_mps2 <= 2.0",
+        "timing_ftti_ms": 100,
+        "asil_rating": "ASIL_A"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-CRUISE-005",
+        "parent_req_id": "REQ-SYS2-CRUISE-005",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 100.0,
+          "DetectedSpeedLimit_kph": 80.0,
+          "DistToSpeedSign_m": 120.0,
+          "iACC_ModeEnabled_flag": true
+        },
+        "expected_assertions": "TargetSetSpeed_kph == 80.0 and iACC_DecelCommand_mps2 <= 2.0",
+        "tolerances": { "speed_tolerance_kph": 1.0, "response_time_max_ms": 100 }
+      }
+    ]
+  }
+}

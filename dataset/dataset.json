@@ -1,0 +1,147 @@
+{
+  "scenario_id": "AUTO-LONG-001",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Longitudinal Control",
+    "target_feature": "AEB Car-to-Car Stationary (CCRs)",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "UN Regulation R152e Amendment 1 / euro_ncap_aeb_c2c_test_protocol_v43",
+    "doc_number": 3,
+    "specific_clause": "UN R152 Para 5.2.1.1 & Euro NCAP v4.3 Section 2.1",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall provide forward collision mitigation for stationary targets. When approaching a stationary lead vehicle on a straight asphalt road at speeds between 20 km/h and 60 km/h, the system must trigger an acoustic/visual warning if time-to-collision is critical, and autonomously apply emergency deceleration to avoid impact or reduce relative collision speed without false activation during normal bypass.",
+    "operational_design_domain": {
+      "speed_range_kph": [20.0, 60.0],
+      "road_type": "Straight high-friction dry asphalt (mu >= 0.8)",
+      "environmental_conditions": "Daylight, ambient illumination > 2000 lux, no heavy rain/fog"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 200.0]},
+        {"name": "LeadTargetDist_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 150.0]},
+        {"name": "LeadTargetSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 0.0]},
+        {"name": "DriverBrakePedal_pct", "data_type": "float", "unit": "%", "valid_range": [0.0, 100.0]},
+        {"name": "SteeringTorque_Nm", "data_type": "float", "unit": "Nm", "valid_range": [-50.0, 50.0]}
+      ],
+      "output_signals": [
+        {"name": "FCW_WarnState", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "STANDBY", "ACOUSTIC_OPTICAL"]},
+        {"name": "AEB_DecelRequest_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 9.81]},
+        {"name": "AEB_HoldStatus", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-AEB-01",
+        "operational_mode": "Collision_Warning_State",
+        "description": "Forward Collision Warning (FCW) escalation based on TTC threshold"
+      },
+      {
+        "sub_intent_id": "SUB-AEB-02",
+        "operational_mode": "Autonomous_Emergency_Braking",
+        "description": "Autonomous full-service deceleration actuation to mitigate/avoid impact"
+      },
+      {
+        "sub_intent_id": "SUB-AEB-03",
+        "operational_mode": "Driver_Override_Suppression",
+        "description": "Suppression and abort of autonomous braking upon active steering avoidance"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-AEB-001",
+        "parent_sub_intent_id": "SUB-AEB-01",
+        "statement": "When VehSpd_kph is between 20.0 and 60.0 km/h and TTC <= 1.4s, FCW_WarnState shall transition to ACOUSTIC_OPTICAL within an FTTI of 50 ms.",
+        "preconditions": "VehSpd_kph >= 20.0 and VehSpd_kph <= 60.0 and LeadTargetSpd_kph == 0.0",
+        "trigger": "LeadTargetDist_m / (VehSpd_kph / 3.6) <= 1.4",
+        "postconditions": "FCW_WarnState == ACOUSTIC_OPTICAL",
+        "timing_ftti_ms": 50,
+        "asil_rating": "ASIL_B"
+      },
+      {
+        "req_id": "REQ-SYS2-AEB-002",
+        "parent_sub_intent_id": "SUB-AEB-02",
+        "statement": "When VehSpd_kph is between 20.0 and 60.0 km/h and TTC <= 0.8s, AEB_DecelRequest_mps2 shall assert >= 6.0 m/s^2 until VehSpd_kph == 0 or target cleared.",
+        "preconditions": "VehSpd_kph >= 20.0 and DriverBrakePedal_pct < 20.0",
+        "trigger": "LeadTargetDist_m / (VehSpd_kph / 3.6) <= 0.8",
+        "postconditions": "AEB_DecelRequest_mps2 >= 6.0",
+        "timing_ftti_ms": 100,
+        "asil_rating": "ASIL_B"
+      },
+      {
+        "req_id": "REQ-SYS2-AEB-003",
+        "parent_sub_intent_id": "SUB-AEB-03",
+        "statement": "If AEB is active and SteeringTorque_Nm exceeds 3.5 Nm (evasive maneuver), AEB_DecelRequest_mps2 shall reset to 0 within 40 ms.",
+        "preconditions": "AEB_DecelRequest_mps2 > 0.0",
+        "trigger": "abs(SteeringTorque_Nm) >= 3.5",
+        "postconditions": "AEB_DecelRequest_mps2 == 0.0",
+        "timing_ftti_ms": 40,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-AEB-001",
+        "parent_req_id": "REQ-SYS2-AEB-001",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 50.0,
+          "LeadTargetDist_m": 15.0,
+          "LeadTargetSpd_kph": 0.0,
+          "DriverBrakePedal_pct": 0.0,
+          "SteeringTorque_Nm": 0.0
+        },
+        "expected_assertions": "FCW_WarnState == 'ACOUSTIC_OPTICAL'",
+        "tolerances": { "response_time_max_ms": 50 }
+      },
+      {
+        "test_id": "TC-SYS5-AEB-002",
+        "parent_req_id": "REQ-SYS2-AEB-002",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 20.0,
+          "LeadTargetDist_m": 4.4,
+          "LeadTargetSpd_kph": 0.0,
+          "DriverBrakePedal_pct": 0.0,
+          "SteeringTorque_Nm": 0.0
+        },
+        "expected_assertions": "AEB_DecelRequest_mps2 >= 6.0",
+        "tolerances": { "decel_tolerance_mps2": 0.2, "response_time_max_ms": 100 }
+      },
+      {
+        "test_id": "TC-SYS5-AEB-003",
+        "parent_req_id": "REQ-SYS2-AEB-002",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 19.5,
+          "LeadTargetDist_m": 4.0,
+          "LeadTargetSpd_kph": 0.0,
+          "DriverBrakePedal_pct": 0.0,
+          "SteeringTorque_Nm": 0.0
+        },
+        "expected_assertions": "AEB_DecelRequest_mps2 == 0.0",
+        "tolerances": { "notes": "Below operational lower boundary 20 km/h: AEB should not trigger emergency stop" }
+      },
+      {
+        "test_id": "TC-SYS5-AEB-004",
+        "parent_req_id": "REQ-SYS2-AEB-003",
+        "test_category": "Negative_Fault_Injection",
+        "stimulus_vector": {
+          "VehSpd_kph": 40.0,
+          "LeadTargetDist_m": 8.0,
+          "LeadTargetSpd_kph": 0.0,
+          "DriverBrakePedal_pct": 0.0,
+          "SteeringTorque_Nm": 4.0
+        },
+        "expected_assertions": "AEB_DecelRequest_mps2 == 0.0",
+        "tolerances": { "response_time_max_ms": 40 }
+      }
+    ]
+  }
+}

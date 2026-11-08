@@ -1,0 +1,73 @@
+{
+  "scenario_id": "AUTO-SOTIF-005",
+  "metadata": {
+    "domain": "System Safety",
+    "sub_system": "SOTIF / Sensor Degraded",
+    "target_feature": "Sensor PMIC Under-Voltage Reset & Watchdog Diagnostic",
+    "target_asil": "ASIL_D",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "iso26262_wp-e",
+    "doc_number": 29,
+    "specific_clause": "ROHM White Paper Section 6-4, 6-5 (BD39040MUF PMIC) & ISO 26262 Part 5",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The ADAS ECU power management system shall continuously monitor voltage rails feeding perception microcontrollers and radar/camera sensors. If battery transient draw causes secondary 3.3V/5.0V supply rail sagging exceeding -10% tolerance, the power monitoring IC must assert a reset within 10 ms, prevent corrupt perception frame transmission, and transition the ECU to safe state.",
+    "operational_design_domain": {
+      "speed_range_kph": [0.0, 140.0],
+      "road_type": "All vehicle operational roads",
+      "environmental_conditions": "Normal to extreme operating temperatures (-40 C to 105 C)"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "BatteryVoltage_V", "data_type": "float", "unit": "V", "valid_range": [6.0, 18.0]},
+        {"name": "PMIC_RailVoltage3V3_V", "data_type": "float", "unit": "V", "valid_range": [0.0, 5.0]},
+        {"name": "PMIC_RailVoltage5V0_V", "data_type": "float", "unit": "V", "valid_range": [0.0, 7.0]},
+        {"name": "WatchdogRefreshValid_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ],
+      "output_signals": [
+        {"name": "ECU_ResetTrigger_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "SafeStateTransitionActive_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "CAN_BroadcastInhibit_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-SOTIF-VOLT-01",
+        "operational_mode": "Power_Supply_Integrity_Supervision",
+        "description": "Independent window-comparator monitoring of internal sensor and MCU voltage rails"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-SOTIF-007",
+        "parent_sub_intent_id": "SUB-SOTIF-VOLT-01",
+        "statement": "When PMIC_RailVoltage3V3_V drops below 2.97 V (-10% threshold) or PMIC_RailVoltage5V0_V drops below 4.50 V, ECU_ResetTrigger_flag and CAN_BroadcastInhibit_flag shall assert true within an FTTI of 10 ms, forcing SafeStateTransitionActive_flag == true.",
+        "preconditions": "BatteryVoltage_V >= 6.0",
+        "trigger": "PMIC_RailVoltage3V3_V < 2.97 or PMIC_RailVoltage5V0_V < 4.50",
+        "postconditions": "ECU_ResetTrigger_flag == true and CAN_BroadcastInhibit_flag == true and SafeStateTransitionActive_flag == true",
+        "timing_ftti_ms": 10,
+        "asil_rating": "ASIL_D"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-SOTIF-007",
+        "parent_req_id": "REQ-SYS2-SOTIF-007",
+        "test_category": "Negative_Fault_Injection",
+        "stimulus_vector": {
+          "BatteryVoltage_V": 9.5,
+          "PMIC_RailVoltage3V3_V": 2.85,
+          "PMIC_RailVoltage5V0_V": 4.80,
+          "WatchdogRefreshValid_flag": true
+        },
+        "expected_assertions": "ECU_ResetTrigger_flag == true and SafeStateTransitionActive_flag == true",
+        "tolerances": { "voltage_tolerance_V": 0.05, "response_time_max_ms": 10 }
+      }
+    ]
+  }
+}

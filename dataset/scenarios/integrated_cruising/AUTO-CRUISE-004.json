@@ -1,0 +1,72 @@
+{
+  "scenario_id": "AUTO-CRUISE-004",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Integrated Cruising",
+    "target_feature": "Adaptive Curve Deceleration (Road Geometry Assist)",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "euro_ncap_protocol_assisted_driving_v11",
+    "doc_number": 16,
+    "specific_clause": "Euro NCAP Assisted Driving v1.1 Section 3.2.4 & 4.3.4.1",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall utilize forward camera lane geometry and navigation map horizon data to anticipate roadway curvature while cruising at 90 km/h. When approaching a sharp highway curve with a horizontal radius of 300m, the system must automatically modulate cruising speed down to a safe lateral acceleration boundary (<= 2.5 m/s^2), restoring cruising speed upon curve exit.",
+    "operational_design_domain": {
+      "speed_range_kph": [60.0, 110.0],
+      "road_type": "Curved highway corridor, horizontal radius 200m to 500m",
+      "environmental_conditions": "Daylight, dry pavement"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 180.0]},
+        {"name": "ApproachingCurveRadius_m", "data_type": "float", "unit": "m", "valid_range": [50.0, 2000.0]},
+        {"name": "DistToCurve_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 300.0]},
+        {"name": "MaxComfortLatAccel_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [1.5, 3.5]}
+      ],
+      "output_signals": [
+        {"name": "CurveAdjustedTargetSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [20.0, 140.0]},
+        {"name": "PredictedLateralAccel_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 6.0]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-CRUISE-CURV-01",
+        "operational_mode": "Curve_Dynamics_Calculation",
+        "description": "Compute maximum permissible velocity v_safe = sqrt(a_lat_max * R) and command deceleration"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-CRUISE-006",
+        "parent_sub_intent_id": "SUB-CRUISE-CURV-01",
+        "statement": "When ApproachingCurveRadius_m == 300.0 m and DistToCurve_m <= 100.0 m while VehSpd_kph == 90.0 km/h, CurveAdjustedTargetSpd_kph shall calculate v_safe <= 72.0 km/h to maintain PredictedLateralAccel_mps2 <= 2.5 m/s^2 within an FTTI of 80 ms.",
+        "preconditions": "VehSpd_kph >= 85.0 and ApproachingCurveRadius_m <= 400.0",
+        "trigger": "DistToCurve_m <= 100.0 and ApproachingCurveRadius_m <= 300.0",
+        "postconditions": "CurveAdjustedTargetSpd_kph <= 72.0 and PredictedLateralAccel_mps2 <= 2.5",
+        "timing_ftti_ms": 80,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-CRUISE-006",
+        "parent_req_id": "REQ-SYS2-CRUISE-006",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 90.0,
+          "ApproachingCurveRadius_m": 300.0,
+          "DistToCurve_m": 80.0,
+          "MaxComfortLatAccel_mps2": 2.5
+        },
+        "expected_assertions": "CurveAdjustedTargetSpd_kph <= 72.0 and PredictedLateralAccel_mps2 <= 2.5",
+        "tolerances": { "speed_tolerance_kph": 2.0, "response_time_max_ms": 80 }
+      }
+    ]
+  }
+}

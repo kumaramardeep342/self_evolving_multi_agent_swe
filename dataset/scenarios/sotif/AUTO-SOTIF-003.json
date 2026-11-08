@@ -1,0 +1,78 @@
+{
+  "scenario_id": "AUTO-SOTIF-003",
+  "metadata": {
+    "domain": "System Safety",
+    "sub_system": "SOTIF / Sensor Degraded",
+    "target_feature": "Partial Optical Lens Occlusion Handling",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "euro_ncap_protocol_assisted_driving_v11",
+    "doc_number": 16,
+    "specific_clause": "Euro NCAP Assisted Driving v1.1 Section 4.1.2.3 & ISO 21448 Cl. 8.3.3",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "While cruising with Lane Centering and ACC active, if mud splash or road salt accumulation covers more than 50% of the forward camera field of view, the system must detect optical blockage within 10 seconds, issue an acoustic and visual cleaning reminder to the driver, and initiate safe disengagement of lateral assistance.",
+    "operational_design_domain": {
+      "speed_range_kph": [50.0, 110.0],
+      "road_type": "Paved road with wet slush or dirt contamination",
+      "environmental_conditions": "Daylight, road debris accumulation"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 160.0]},
+        {"name": "CameraLensBlockedFraction_pct", "data_type": "float", "unit": "%", "valid_range": [0.0, 100.0]},
+        {"name": "ContinuousBlockageDuration_s", "data_type": "float", "unit": "s", "valid_range": [0.0, 30.0]},
+        {"name": "LaneCenteringActive_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ],
+      "output_signals": [
+        {"name": "BlockageWarningTelltale", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "LaneCenteringDisengage_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "TakeoverChimeActive_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-SOTIF-LENS-01",
+        "operational_mode": "Optical_Blockage_Discrimination",
+        "description": "Distinguish uniform gray lens occlusion from dark night scenes"
+      },
+      {
+        "sub_intent_id": "SUB-SOTIF-LENS-02",
+        "operational_mode": "Controlled_Disengagement",
+        "description": "Alert driver and execute orderly lateral assistance disengagement"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-SOTIF-005",
+        "parent_sub_intent_id": "SUB-SOTIF-LENS-02",
+        "statement": "When CameraLensBlockedFraction_pct >= 50.0% and ContinuousBlockageDuration_s >= 10.0 s while LaneCenteringActive_flag is true, BlockageWarningTelltale and TakeoverChimeActive_flag shall assert true and LaneCenteringDisengage_flag shall execute a controlled 5.0 s torque ramp-down.",
+        "preconditions": "LaneCenteringActive_flag == true and VehSpd_kph >= 50.0",
+        "trigger": "CameraLensBlockedFraction_pct >= 50.0 and ContinuousBlockageDuration_s >= 10.0",
+        "postconditions": "BlockageWarningTelltale == true and TakeoverChimeActive_flag == true and LaneCenteringDisengage_flag == true",
+        "timing_ftti_ms": 100,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-SOTIF-005",
+        "parent_req_id": "REQ-SYS2-SOTIF-005",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 80.0,
+          "CameraLensBlockedFraction_pct": 65.0,
+          "ContinuousBlockageDuration_s": 10.5,
+          "LaneCenteringActive_flag": true
+        },
+        "expected_assertions": "BlockageWarningTelltale == true and LaneCenteringDisengage_flag == true",
+        "tolerances": { "response_time_max_ms": 100 }
+      }
+    ]
+  }
+}

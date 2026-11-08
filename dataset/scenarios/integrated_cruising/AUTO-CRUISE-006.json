@@ -1,0 +1,72 @@
+{
+  "scenario_id": "AUTO-CRUISE-006",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Integrated Cruising",
+    "target_feature": "Lead Vehicle Cut-Out Unmasking Stationary Target",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "euro_ncap_protocol_assisted_driving_v11",
+    "doc_number": 16,
+    "specific_clause": "Euro NCAP Assisted Driving v1.1 Section 4.3.1.1 (Cut-out)",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "While traveling in Assisted Mode at 90 km/h behind a moving lead vehicle, the lead vehicle suddenly executes a lane change (cut-out) at a TTC of 2.0s, revealing a stationary obstacle (GVT) in the travel lane. The system must transition from cruise tracking to emergency braking to avoid a collision without requiring manual driver intervention.",
+    "operational_design_domain": {
+      "speed_range_kph": [70.0, 95.0],
+      "road_type": "Multi-lane divided highway, clear travel lane unmasked",
+      "environmental_conditions": "Daylight, dry asphalt"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 180.0]},
+        {"name": "UnmaskedStationaryDist_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 150.0]},
+        {"name": "LeadVehicleCutOutCompleted_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "CalculatedStationaryTTC_s", "data_type": "float", "unit": "s", "valid_range": [0.0, 10.0]}
+      ],
+      "output_signals": [
+        {"name": "EmergencyDecelDemand_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 9.81]},
+        {"name": "FCW_AlarmState", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "ACOUSTIC_OPTICAL"]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-CRUISE-CUTOUT-01",
+        "operational_mode": "Unmasked_Target_Emergency_Transition",
+        "description": "Switch from cruise headway following to emergency braking upon target unmasking"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-CRUISE-008",
+        "parent_sub_intent_id": "SUB-CRUISE-CUTOUT-01",
+        "statement": "When LeadVehicleCutOutCompleted_flag == true and CalculatedStationaryTTC_s <= 2.0 s at VehSpd_kph >= 70.0 km/h, EmergencyDecelDemand_mps2 shall assert >= 6.5 m/s^2 within an FTTI of 50 ms and FCW_AlarmState shall transition to ACOUSTIC_OPTICAL.",
+        "preconditions": "LeadVehicleCutOutCompleted_flag == true and VehSpd_kph >= 70.0",
+        "trigger": "CalculatedStationaryTTC_s <= 2.0",
+        "postconditions": "EmergencyDecelDemand_mps2 >= 6.5 and FCW_AlarmState == ACOUSTIC_OPTICAL",
+        "timing_ftti_ms": 50,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-CRUISE-008",
+        "parent_req_id": "REQ-SYS2-CRUISE-008",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 90.0,
+          "UnmaskedStationaryDist_m": 38.8,
+          "LeadVehicleCutOutCompleted_flag": true,
+          "CalculatedStationaryTTC_s": 1.55
+        },
+        "expected_assertions": "EmergencyDecelDemand_mps2 >= 6.5 and FCW_AlarmState == 'ACOUSTIC_OPTICAL'",
+        "tolerances": { "response_time_max_ms": 50 }
+      }
+    ]
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "scenario_id": "AUTO-LONG-003",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Longitudinal Control",
+    "target_feature": "AEB Car-to-Car Braking (CCRb)",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "euro_ncap_aeb_c2c_test_protocol_v43",
+    "doc_number": 13,
+    "specific_clause": "Euro NCAP C2C v4.3 Section 8.2.2.3",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall provide automatic braking response when following a lead vehicle traveling at 50 km/h that begins decelerating at rates between -2.0 m/s^2 and -6.0 m/s^2 at headways of 12m and 40m. The system must maintain safety margins and autonomously stop or reduce speed without contacting the decelerating lead target.",
+    "operational_design_domain": {
+      "speed_range_kph": [40.0, 60.0],
+      "road_type": "Straight dry asphalt, peak braking coefficient >= 0.9",
+      "environmental_conditions": "Daylight, ambient illumination > 2000 lux, dry road surface"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 200.0]},
+        {"name": "LeadTargetDist_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 150.0]},
+        {"name": "LeadTargetDecel_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [-9.81, 0.0]},
+        {"name": "DriverBrakePedal_pct", "data_type": "float", "unit": "%", "valid_range": [0.0, 100.0]},
+        {"name": "SteeringTorque_Nm", "data_type": "float", "unit": "Nm", "valid_range": [-50.0, 50.0]}
+      ],
+      "output_signals": [
+        {"name": "FCW_WarnState", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "STANDBY", "ACOUSTIC_OPTICAL"]},
+        {"name": "AEB_DecelRequest_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 9.81]},
+        {"name": "AEB_HoldStatus", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-CCRB-01",
+        "operational_mode": "Lead_Deceleration_Tracking",
+        "description": "Continuously monitor closing distance and lead vehicle deceleration rate"
+      },
+      {
+        "sub_intent_id": "SUB-CCRB-02",
+        "operational_mode": "Dynamic_Braking_Intervention",
+        "description": "Assert service brake deceleration matching or exceeding lead vehicle negative acceleration"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-CCRB-001",
+        "parent_sub_intent_id": "SUB-CCRB-01",
+        "statement": "When VehSpd_kph is 50.0 km/h, LeadTargetDecel_mps2 <= -2.0 m/s^2, and headway decreases below 10.0 m, FCW_WarnState shall transition to ACOUSTIC_OPTICAL within an FTTI of 50 ms.",
+        "preconditions": "VehSpd_kph >= 48.0 and VehSpd_kph <= 52.0",
+        "trigger": "LeadTargetDecel_mps2 <= -2.0 and LeadTargetDist_m <= 10.0",
+        "postconditions": "FCW_WarnState == ACOUSTIC_OPTICAL",
+        "timing_ftti_ms": 50,
+        "asil_rating": "ASIL_B"
+      },
+      {
+        "req_id": "REQ-SYS2-CCRB-002",
+        "parent_sub_intent_id": "SUB-CCRB-02",
+        "statement": "If LeadTargetDecel_mps2 <= -6.0 m/s^2 at a headway of 12 m, AEB_DecelRequest_mps2 shall assert >= 6.0 m/s^2 within 100 ms until ego vehicle stops without contact.",
+        "preconditions": "LeadTargetDist_m <= 12.0 and DriverBrakePedal_pct < 20.0",
+        "trigger": "LeadTargetDecel_mps2 <= -6.0",
+        "postconditions": "AEB_DecelRequest_mps2 >= 6.0",
+        "timing_ftti_ms": 100,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-CCRB-001",
+        "parent_req_id": "REQ-SYS2-CCRB-001",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 50.0,
+          "LeadTargetDist_m": 40.0,
+          "LeadTargetDecel_mps2": -2.0,
+          "DriverBrakePedal_pct": 0.0,
+          "SteeringTorque_Nm": 0.0
+        },
+        "expected_assertions": "FCW_WarnState == 'ACOUSTIC_OPTICAL'",
+        "tolerances": { "response_time_max_ms": 50 }
+      },
+      {
+        "test_id": "TC-SYS5-CCRB-002",
+        "parent_req_id": "REQ-SYS2-CCRB-002",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 50.0,
+          "LeadTargetDist_m": 12.0,
+          "LeadTargetDecel_mps2": -6.0,
+          "DriverBrakePedal_pct": 0.0,
+          "SteeringTorque_Nm": 0.0
+        },
+        "expected_assertions": "AEB_DecelRequest_mps2 >= 6.0",
+        "tolerances": { "decel_tolerance_mps2": 0.2, "response_time_max_ms": 100 }
+      }
+    ]
+  }
+}

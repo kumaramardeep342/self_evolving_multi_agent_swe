@@ -1,0 +1,90 @@
+{
+  "scenario_id": "AUTO-LAT-012",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Lateral Control",
+    "target_feature": "Driver Steering Override and Driver State Link (DSL)",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "Euro_NCAP_Protocol_Crash_Avoidance_Lane_Departure_Collisions_v12 / EU Regulation No_130",
+    "doc_number": 19,
+    "specific_clause": "Euro NCAP Lane Departure Protocol v1.2 Sec 3.1.1.1, 5.2.1.1.2 & EU Reg 130 Para 5.2.1.2",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall prioritize driver steering authority during lateral active safety interventions. When an active LKA or ELK correction is occurring at 70 km/h, if the driver applies manual steering wheel torque exceeding 3.0 Nm (+0.5 Nm tolerance), or if the Driver Monitoring System confirms the driver is attentive and signaling intentional departure, the lateral intervention must suppress within 50 ms without jerky torque transitions.",
+    "operational_design_domain": {
+      "speed_range_kph": [65.0, 75.0],
+      "road_type": "Solid line or dashed lane boundary, straight track",
+      "environmental_conditions": "Daylight, normal driving"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 160.0]},
+        {"name": "DriverSteeringTorque_Nm", "data_type": "float", "unit": "Nm", "valid_range": [-50.0, 50.0]},
+        {"name": "DriverAttentivenessState", "data_type": "enum", "unit": "enum", "valid_range": ["ATTENTIVE", "DISTRACTED", "UNKNOWN"]},
+        {"name": "ActiveLSS_InterventionFlag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ],
+      "output_signals": [
+        {"name": "LSS_SuppressionState", "data_type": "enum", "unit": "enum", "valid_range": ["NOMINAL_ACTIVE", "SUPPRESSED_BY_OVERRIDE", "REDUCED_DSL"]},
+        {"name": "CommandedTorque_Nm", "data_type": "float", "unit": "Nm", "valid_range": [-15.0, 15.0]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-OVERRIDE-01",
+        "operational_mode": "Driver_Override_Detection",
+        "description": "Detect driver intentional override torque exceeding 3.0 Nm boundary"
+      },
+      {
+        "sub_intent_id": "SUB-OVERRIDE-02",
+        "operational_mode": "Driver_State_Link_Modulation",
+        "description": "Modulate system sensitivity and release steering control to driver"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-OVERRIDE-001",
+        "parent_sub_intent_id": "SUB-OVERRIDE-01",
+        "statement": "When ActiveLSS_InterventionFlag == true and abs(DriverSteeringTorque_Nm) >= 3.5 Nm (3.0 Nm + 0.5 Nm tolerance), CommandedTorque_Nm shall ramp to 0.0 Nm with LSS_SuppressionState transitioning to SUPPRESSED_BY_OVERRIDE within an FTTI of 50 ms.",
+        "preconditions": "ActiveLSS_InterventionFlag == true",
+        "trigger": "abs(DriverSteeringTorque_Nm) >= 3.5",
+        "postconditions": "LSS_SuppressionState == SUPPRESSED_BY_OVERRIDE and CommandedTorque_Nm == 0.0",
+        "timing_ftti_ms": 50,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-OVERRIDE-001",
+        "parent_req_id": "REQ-SYS2-OVERRIDE-001",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 70.0,
+          "DriverSteeringTorque_Nm": 3.6,
+          "DriverAttentivenessState": "ATTENTIVE",
+          "ActiveLSS_InterventionFlag": true
+        },
+        "expected_assertions": "LSS_SuppressionState == 'SUPPRESSED_BY_OVERRIDE' and CommandedTorque_Nm == 0.0",
+        "tolerances": { "response_time_max_ms": 50 }
+      },
+      {
+        "test_id": "TC-SYS5-OVERRIDE-002",
+        "parent_req_id": "REQ-SYS2-OVERRIDE-001",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 70.0,
+          "DriverSteeringTorque_Nm": 2.2,
+          "DriverAttentivenessState": "DISTRACTED",
+          "ActiveLSS_InterventionFlag": true
+        },
+        "expected_assertions": "LSS_SuppressionState == 'NOMINAL_ACTIVE'",
+        "tolerances": { "notes": "Below 3.0 Nm override threshold: system intervention persists" }
+      }
+    ]
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "scenario_id": "AUTO-CRUISE-001",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Integrated Cruising",
+    "target_feature": "Stop-and-Go ACC Headway & Standstill Control",
+    "target_asil": "ASIL_A",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "euro_ncap_protocol_assisted_driving_v11",
+    "doc_number": 16,
+    "specific_clause": "Euro NCAP Assisted Driving v1.1 Section 3.2.1 & EU GSR",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall maintain a driver-selected time headway (1.0s to 2.5s) to the lead vehicle in highway and urban stop-and-go traffic. When the preceding vehicle decelerates to a complete stop, the system must smoothly control engine and brake actuators to bring the vehicle to a halt behind the lead vehicle at a standstill clearance of 2.0m to 4.0m and hold the vehicle stationary.",
+    "operational_design_domain": {
+      "speed_range_kph": [0.0, 130.0],
+      "road_type": "Motorway or urban arterial, lane width 3.5m, dry pavement",
+      "environmental_conditions": "Clear weather, ambient illumination > 1000 lux"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 200.0]},
+        {"name": "LeadVehicleDist_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 200.0]},
+        {"name": "LeadVehicleSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 160.0]},
+        {"name": "DriverSelectedHeadway_s", "data_type": "float", "unit": "s", "valid_range": [1.0, 2.5]},
+        {"name": "ACC_Engaged_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ],
+      "output_signals": [
+        {"name": "ACC_ThrottleCommand_pct", "data_type": "float", "unit": "%", "valid_range": [0.0, 100.0]},
+        {"name": "ACC_BrakeDecelRequest_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 5.0]},
+        {"name": "StandstillHoldActive_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-CRUISE-ACC-01",
+        "operational_mode": "Headway_Tracking_Regulation",
+        "description": "Modulate throttle and service braking to match lead vehicle speed and maintain selected headway"
+      },
+      {
+        "sub_intent_id": "SUB-CRUISE-ACC-02",
+        "operational_mode": "Standstill_Brake_Hold",
+        "description": "Command standstill hydraulic hold once ego vehicle speed reaches 0 km/h behind lead car"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-CRUISE-001",
+        "parent_sub_intent_id": "SUB-CRUISE-ACC-01",
+        "statement": "While ACC_Engaged_flag is true and LeadVehicleSpd_kph > 0.0, ACC_BrakeDecelRequest_mps2 shall modulate deceleration <= 3.5 m/s^2 to maintain distance equal to (VehSpd_kph / 3.6) * DriverSelectedHeadway_s within an FTTI of 100 ms.",
+        "preconditions": "ACC_Engaged_flag == true and LeadVehicleDist_m > 0.0",
+        "trigger": "abs(LeadVehicleDist_m - ((VehSpd_kph / 3.6) * DriverSelectedHeadway_s)) > 2.0",
+        "postconditions": "ACC_BrakeDecelRequest_mps2 <= 3.5",
+        "timing_ftti_ms": 100,
+        "asil_rating": "ASIL_A"
+      },
+      {
+        "req_id": "REQ-SYS2-CRUISE-002",
+        "parent_sub_intent_id": "SUB-CRUISE-ACC-02",
+        "statement": "When LeadVehicleSpd_kph == 0.0 and VehSpd_kph drops below 0.5 km/h with LeadVehicleDist_m between 2.0m and 4.0m, StandstillHoldActive_flag shall transition to true within 50 ms.",
+        "preconditions": "ACC_Engaged_flag == true and LeadVehicleSpd_kph == 0.0",
+        "trigger": "VehSpd_kph <= 0.5 and LeadVehicleDist_m >= 2.0 and LeadVehicleDist_m <= 4.0",
+        "postconditions": "StandstillHoldActive_flag == true and ACC_ThrottleCommand_pct == 0.0",
+        "timing_ftti_ms": 50,
+        "asil_rating": "ASIL_A"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-CRUISE-001",
+        "parent_req_id": "REQ-SYS2-CRUISE-001",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 80.0,
+          "LeadVehicleDist_m": 33.3,
+          "LeadVehicleSpd_kph": 80.0,
+          "DriverSelectedHeadway_s": 1.5,
+          "ACC_Engaged_flag": true
+        },
+        "expected_assertions": "ACC_BrakeDecelRequest_mps2 <= 3.5",
+        "tolerances": { "headway_tolerance_s": 0.2, "response_time_max_ms": 100 }
+      },
+      {
+        "test_id": "TC-SYS5-CRUISE-002",
+        "parent_req_id": "REQ-SYS2-CRUISE-002",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 0.2,
+          "LeadVehicleDist_m": 3.0,
+          "LeadVehicleSpd_kph": 0.0,
+          "DriverSelectedHeadway_s": 1.5,
+          "ACC_Engaged_flag": true
+        },
+        "expected_assertions": "StandstillHoldActive_flag == true and ACC_ThrottleCommand_pct == 0.0",
+        "tolerances": { "response_time_max_ms": 50 }
+      }
+    ]
+  }
+}

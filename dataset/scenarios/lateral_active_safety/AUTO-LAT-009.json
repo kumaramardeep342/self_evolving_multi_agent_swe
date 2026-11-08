@@ -1,0 +1,72 @@
+{
+  "scenario_id": "AUTO-LAT-009",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Lateral Control",
+    "target_feature": "Emergency Lane Keeping (ELK) - Car-to-Motorcyclist Overtaking Evasion",
+    "target_asil": "ASIL_C",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "Euro_NCAP_Protocol_Crash_Avoidance_Lane_Departure_Collisions_v12",
+    "doc_number": 19,
+    "specific_clause": "Euro NCAP Lane Departure Protocol v1.2 Section 3.2.4 & Figure 3-9",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall prevent a collision when unintentionally drifting into a motorcyclist (EMT) overtaking in the adjacent lane at 80 km/h (ego speed 70 km/h), steering away to ensure the vehicle contour clears the motorcycle bounding box by > 0.3 m.",
+    "operational_design_domain": {
+      "speed_range_kph": [65.0, 75.0],
+      "road_type": "Multi-lane road, EMT 1.0 m from dashed lane boundary",
+      "environmental_conditions": "Daylight, dry road"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 160.0]},
+        {"name": "OvertakingPTWDist_m", "data_type": "float", "unit": "m", "valid_range": [-40.0, 40.0]},
+        {"name": "OvertakingPTWSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 160.0]},
+        {"name": "LateralVelocity_mps", "data_type": "float", "unit": "m/s", "valid_range": [-2.0, 2.0]}
+      ],
+      "output_signals": [
+        {"name": "ELK_PTW_Intervention", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "PTW_VirtualBoxClearance_m", "data_type": "float", "unit": "m", "valid_range": [-2.0, 5.0]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-ELK-CM-OVU-01",
+        "operational_mode": "Overtaking_Motorcycle_Avoidance",
+        "description": "Counteract lateral drift to avoid side impact with overtaking motorcycle"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-ELK-006",
+        "parent_sub_intent_id": "SUB-ELK-CM-OVU-01",
+        "statement": "When VehSpd_kph == 70.0 km/h, OvertakingPTWSpd_kph == 80.0 km/h, and LateralVelocity_mps >= 0.3 m/s toward the adjacent lane with OvertakingPTWDist_m <= 8.0 m, ELK_PTW_Intervention shall assert true within 40 ms ensuring PTW_VirtualBoxClearance_m > 0.3 m.",
+        "preconditions": "OvertakingPTWSpd_kph > VehSpd_kph",
+        "trigger": "LateralVelocity_mps >= 0.3 and OvertakingPTWDist_m <= 8.0",
+        "postconditions": "PTW_VirtualBoxClearance_m > 0.3",
+        "timing_ftti_ms": 40,
+        "asil_rating": "ASIL_C"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-ELK-007",
+        "parent_req_id": "REQ-SYS2-ELK-006",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 70.0,
+          "OvertakingPTWSpd_kph": 80.0,
+          "OvertakingPTWDist_m": 6.5,
+          "LateralVelocity_mps": 0.4
+        },
+        "expected_assertions": "PTW_VirtualBoxClearance_m > 0.3",
+        "tolerances": { "min_clearance_m": 0.3, "response_time_max_ms": 40 }
+      }
+    ]
+  }
+}

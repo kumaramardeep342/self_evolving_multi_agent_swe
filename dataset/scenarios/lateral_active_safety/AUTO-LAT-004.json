@@ -1,0 +1,90 @@
+{
+  "scenario_id": "AUTO-LAT-004",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Lateral Control",
+    "target_feature": "Emergency Lane Keeping (ELK) - Road Edge Prevention",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "Euro_NCAP_Protocol_Crash_Avoidance_Lane_Departure_Collisions_v12",
+    "doc_number": 19,
+    "specific_clause": "Euro NCAP Lane Departure Protocol v1.2 Section 3.1.3 & 5.2.2.1",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall recognize non-painted physical road boundaries (such as grass or gravel verges). When the vehicle drifts toward an unmarked road edge at lateral velocities between 0.2 m/s and 0.6 m/s at 70 km/h, the system must autonomously intervene via steering intervention to ensure Distance-To-Lane-Edge (DTLE) does not exceed -0.1 m.",
+    "operational_design_domain": {
+      "speed_range_kph": [65.0, 75.0],
+      "road_type": "Paved carriageway bordered by grass/gravel road edge, friction coefficient >= 0.9",
+      "environmental_conditions": "Daylight, dry weather, no standing water"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 160.0]},
+        {"name": "LateralDriftRate_mps", "data_type": "float", "unit": "m/s", "valid_range": [-2.0, 2.0]},
+        {"name": "RoadEdgeBoundaryType", "data_type": "enum", "unit": "enum", "valid_range": ["PAINTED_LINE", "GRASS_VERGE", "GRAVEL_EDGE"]},
+        {"name": "DTLE_m", "data_type": "float", "unit": "m", "valid_range": [-1.0, 3.0]}
+      ],
+      "output_signals": [
+        {"name": "ELK_InterventionState", "data_type": "enum", "unit": "enum", "valid_range": ["INACTIVE", "ACTIVE_RE_INTERVENTION"]},
+        {"name": "ELK_CorrectionTorque_Nm", "data_type": "float", "unit": "Nm", "valid_range": [-15.0, 15.0]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-ELK-RE-01",
+        "operational_mode": "Physical_Road_Edge_Perception",
+        "description": "Segment grass/gravel terrain boundary and compute DTLE without painted lines"
+      },
+      {
+        "sub_intent_id": "SUB-ELK-RE-02",
+        "operational_mode": "Emergency_Edge_Avoidance_Intervention",
+        "description": "Execute lateral steering intervention to maintain DTLE >= -0.1 m"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-ELK-001",
+        "parent_sub_intent_id": "SUB-ELK-RE-02",
+        "statement": "When VehSpd_kph is 70.0 km/h, RoadEdgeBoundaryType is GRASS_VERGE or GRAVEL_EDGE, and DTLE_m <= 0.2 m with LateralDriftRate_mps between 0.2 and 0.6 m/s, ELK_CorrectionTorque_Nm shall assert >= 2.5 Nm within 50 ms to guarantee final DTLE_m >= -0.1 m.",
+        "preconditions": "VehSpd_kph >= 68.0 and VehSpd_kph <= 72.0",
+        "trigger": "DTLE_m <= 0.2 and abs(LateralDriftRate_mps) >= 0.2",
+        "postconditions": "ELK_InterventionState == ACTIVE_RE_INTERVENTION and DTLE_m >= -0.1",
+        "timing_ftti_ms": 50,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-ELK-001",
+        "parent_req_id": "REQ-SYS2-ELK-001",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 70.0,
+          "LateralDriftRate_mps": 0.4,
+          "RoadEdgeBoundaryType": "GRASS_VERGE",
+          "DTLE_m": 0.15
+        },
+        "expected_assertions": "ELK_InterventionState == 'ACTIVE_RE_INTERVENTION'",
+        "tolerances": { "min_dtle_m": -0.1, "response_time_max_ms": 50 }
+      },
+      {
+        "test_id": "TC-SYS5-ELK-002",
+        "parent_req_id": "REQ-SYS2-ELK-001",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 70.0,
+          "LateralDriftRate_mps": 0.6,
+          "RoadEdgeBoundaryType": "GRAVEL_EDGE",
+          "DTLE_m": 0.05
+        },
+        "expected_assertions": "ELK_InterventionState == 'ACTIVE_RE_INTERVENTION'",
+        "tolerances": { "min_dtle_m": -0.1, "response_time_max_ms": 50 }
+      }
+    ]
+  }
+}

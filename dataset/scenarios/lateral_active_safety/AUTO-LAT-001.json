@@ -1,0 +1,107 @@
+{
+  "scenario_id": "AUTO-LAT-001",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Lateral Control",
+    "target_feature": "Lane Departure Warning System (LDWS) - Dashed Marker Drift",
+    "target_asil": "ASIL_A",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "EU Regulation No_130",
+    "doc_number": 1,
+    "specific_clause": "UN/ECE Regulation No. 130 Paragraph 5.2.1 & 6.5",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall monitor visible dashed lane markings on straight roads and gentle curves (radius >= 250 m). When cruising at speeds above 60 km/h without turn indicator activation, the system must detect unintentional lateral drifting at rates between 0.1 m/s and 0.8 m/s, alerting the driver via acoustic and visual warning modes at the latest when the front wheel crosses 0.3 m beyond the outer edge of the line.",
+    "operational_design_domain": {
+      "speed_range_kph": [60.0, 100.0],
+      "road_type": "Straight or curved road (radius >= 250 m) with visible dashed lane markings, width 3.5m to 3.7m",
+      "environmental_conditions": "Daylight or good illumination, dry asphalt/concrete, no heavy rain/fog"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 200.0]},
+        {"name": "LateralDriftRate_mps", "data_type": "float", "unit": "m/s", "valid_range": [-2.0, 2.0]},
+        {"name": "DistToLaneEdge_m", "data_type": "float", "unit": "m", "valid_range": [-1.0, 5.0]},
+        {"name": "TurnIndicatorState", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "LEFT", "RIGHT"]},
+        {"name": "LaneMarkingType", "data_type": "enum", "unit": "enum", "valid_range": ["NONE", "DASHED", "SOLID", "ROAD_EDGE"]}
+      ],
+      "output_signals": [
+        {"name": "LDW_WarnState", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "STANDBY", "ACOUSTIC_OPTICAL", "HAPTIC"]},
+        {"name": "LDW_SideIndicator", "data_type": "enum", "unit": "enum", "valid_range": ["NONE", "LEFT", "RIGHT"]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-LDW-01",
+        "operational_mode": "Lane_Boundary_Perception",
+        "description": "Estimate distance to lane edge and lateral departure velocity relative to dashed lines"
+      },
+      {
+        "sub_intent_id": "SUB-LDW-02",
+        "operational_mode": "Unintentional_Drift_Warning",
+        "description": "Issue multimodal departure warning prior to exceeding 0.3 m crossing threshold"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-LDW-001",
+        "parent_sub_intent_id": "SUB-LDW-02",
+        "statement": "When VehSpd_kph >= 60.0 km/h, TurnIndicatorState == OFF, LaneMarkingType == DASHED, and DistToLaneEdge_m <= 0.0 m with LateralDriftRate_mps between 0.1 and 0.8 m/s, LDW_WarnState shall transition to ACOUSTIC_OPTICAL within an FTTI of 50 ms before the tire exceeds 0.3 m beyond the outer boundary.",
+        "preconditions": "VehSpd_kph >= 60.0 and TurnIndicatorState == OFF and LaneMarkingType == DASHED",
+        "trigger": "DistToLaneEdge_m <= 0.0 and abs(LateralDriftRate_mps) >= 0.1",
+        "postconditions": "LDW_WarnState == ACOUSTIC_OPTICAL",
+        "timing_ftti_ms": 50,
+        "asil_rating": "ASIL_A"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-LDW-001",
+        "parent_req_id": "REQ-SYS2-LDW-001",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 65.0,
+          "LateralDriftRate_mps": 0.4,
+          "DistToLaneEdge_m": -0.05,
+          "TurnIndicatorState": "OFF",
+          "LaneMarkingType": "DASHED"
+        },
+        "expected_assertions": "LDW_WarnState == 'ACOUSTIC_OPTICAL'",
+        "tolerances": { "response_time_max_ms": 50 }
+      },
+      {
+        "test_id": "TC-SYS5-LDW-002",
+        "parent_req_id": "REQ-SYS2-LDW-001",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 65.0,
+          "LateralDriftRate_mps": 0.1,
+          "DistToLaneEdge_m": 0.0,
+          "TurnIndicatorState": "OFF",
+          "LaneMarkingType": "DASHED"
+        },
+        "expected_assertions": "LDW_WarnState == 'ACOUSTIC_OPTICAL'",
+        "tolerances": { "response_time_max_ms": 50 }
+      },
+      {
+        "test_id": "TC-SYS5-LDW-003",
+        "parent_req_id": "REQ-SYS2-LDW-001",
+        "test_category": "Negative_Fault_Injection",
+        "stimulus_vector": {
+          "VehSpd_kph": 58.0,
+          "LateralDriftRate_mps": 0.4,
+          "DistToLaneEdge_m": -0.1,
+          "TurnIndicatorState": "OFF",
+          "LaneMarkingType": "DASHED"
+        },
+        "expected_assertions": "LDW_WarnState == 'OFF'",
+        "tolerances": { "notes": "Below minimum activation velocity 60 km/h: LDWS warning suppressed" }
+      }
+    ]
+  }
+}
