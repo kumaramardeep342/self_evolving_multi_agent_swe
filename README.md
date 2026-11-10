@@ -16,6 +16,9 @@ dataset/
 │   ├── AUTO-CRUISE-001.json
 │   └── AUTO-SOTIF-001.json
 └── scripts/
-    ├── validate_scenarios.py    # Asserts schema, signal types, and G_trace
-    └── compile_dataset.py       # Combines individual files into dataset.json
+│    ├── validate_scenarios.py    # Asserts schema, signal types, and G_trace
+│    └── compile_dataset.py       # Combines individual files into dataset.json
+└── results/                      # Scripts run results
+└── archive/                      # Not in use
+
 ```
