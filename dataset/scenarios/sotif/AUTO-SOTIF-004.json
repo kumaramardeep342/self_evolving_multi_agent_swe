@@ -1,0 +1,74 @@
+{
+  "scenario_id": "AUTO-SOTIF-004",
+  "metadata": {
+    "domain": "System Safety",
+    "sub_system": "SOTIF / Sensor Degraded",
+    "target_feature": "Heterogeneous Sensor Discrepancy Arbitration",
+    "target_asil": "ASIL_C",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "ISO 21448:2022 / ISO_26262_Second_Edition_Overview_Technical_Paper",
+    "doc_number": 28,
+    "specific_clause": "ISO 21448:2022 Sense-Plan-Act Model & ISO 26262 Part 3",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle perception fusion engine shall cross-validate forward obstacle targets between forward radar and stereo vision. If radar reports an imminent stationary obstacle at 25m while vision reports a clear roadway due to camera sun blinding, or vice versa, the system must arbitrate discrepancy, reject single-sensor false triggers, request sensor health validation, and avoid unwarranted harsh deceleration.",
+    "operational_design_domain": {
+      "speed_range_kph": [50.0, 100.0],
+      "road_type": "Divided highway, straight lanes",
+      "environmental_conditions": "Conflicting ambient lighting or metallic overpass reflections"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 180.0]},
+        {"name": "RadarTargetDistance_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 150.0]},
+        {"name": "RadarTargetProbability", "data_type": "float", "unit": "prob", "valid_range": [0.0, 1.0]},
+        {"name": "VisionTargetDistance_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 150.0]},
+        {"name": "VisionTargetProbability", "data_type": "float", "unit": "prob", "valid_range": [0.0, 1.0]}
+      ],
+      "output_signals": [
+        {"name": "FusionPlausibilityState", "data_type": "enum", "unit": "enum", "valid_range": ["CONFIRMED_HAZARD", "DISCREPANCY_UNRESOLVED", "CLEAR_ROAD"]},
+        {"name": "AEB_BrakingAllowed_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-SOTIF-FUS-01",
+        "operational_mode": "Cross_Modal_Plausibility_Gate",
+        "description": "Perform spatial and kinematic coincidence gating between radar and vision tracks"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-SOTIF-006",
+        "parent_sub_intent_id": "SUB-SOTIF-FUS-01",
+        "statement": "When abs(RadarTargetDistance_m - VisionTargetDistance_m) >= 15.0 m while one sensor probability >= 0.85 and the other <= 0.15, FusionPlausibilityState shall assert DISCREPANCY_UNRESOLVED and AEB_BrakingAllowed_flag shall inhibit emergency deceleration within an FTTI of 40 ms.",
+        "preconditions": "VehSpd_kph >= 50.0",
+        "trigger": "abs(RadarTargetDistance_m - VisionTargetDistance_m) >= 15.0 and (RadarTargetProbability - VisionTargetProbability) >= 0.70",
+        "postconditions": "FusionPlausibilityState == DISCREPANCY_UNRESOLVED and AEB_BrakingAllowed_flag == false",
+        "timing_ftti_ms": 40,
+        "asil_rating": "ASIL_C"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-SOTIF-006",
+        "parent_req_id": "REQ-SYS2-SOTIF-006",
+        "test_category": "Negative_Fault_Injection",
+        "stimulus_vector": {
+          "VehSpd_kph": 75.0,
+          "RadarTargetDistance_m": 25.0,
+          "RadarTargetProbability": 0.90,
+          "VisionTargetDistance_m": 120.0,
+          "VisionTargetProbability": 0.05
+        },
+        "expected_assertions": "FusionPlausibilityState == 'DISCREPANCY_UNRESOLVED' and AEB_BrakingAllowed_flag == false",
+        "tolerances": { "response_time_max_ms": 40 }
+      }
+    ]
+  }
+}

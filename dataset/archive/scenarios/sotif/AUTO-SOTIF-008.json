@@ -1,0 +1,78 @@
+{
+  "scenario_id": "AUTO-SOTIF-008",
+  "metadata": {
+    "domain": "System Safety",
+    "sub_system": "SOTIF / Sensor Degraded",
+    "target_feature": "DSM Sensor Blindness & Minimal Risk Condition (MRC) Transition",
+    "target_asil": "ASIL_C",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "ISO 21448:2022 / euro_ncap_protocol_assisted_driving_v11",
+    "doc_number": 28,
+    "specific_clause": "ISO 21448:2022 Clause 8.3.4 (Handing over Authority) & Euro NCAP AD Sec 2.3.2.1",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "While operating in Level 2 Assisted Mode, if an interior driver monitoring infrared camera experiences sensor blindness or physical obstruction (e.g., driver wearing IR-blocking sunglasses or cabin camera obscured) for longer than 10 seconds, the system must recognize that driver engagement can no longer be guaranteed, escalate handover chimes, and systematically disengage assisted driving into a Minimal Risk Condition (MRC).",
+    "operational_design_domain": {
+      "speed_range_kph": [40.0, 130.0],
+      "road_type": "Motorway or interurban road with assisted steering engaged",
+      "environmental_conditions": "Interior cabin illumination variation or infrared blinding"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 200.0]},
+        {"name": "DSM_GazeTrackingAvailable_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "DSM_BlindnessDuration_s", "data_type": "float", "unit": "s", "valid_range": [0.0, 60.0]},
+        {"name": "AssistedModeActive_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ],
+      "output_signals": [
+        {"name": "HandoverEscalationLevel", "data_type": "int", "unit": "stage", "valid_range": [0, 3]},
+        {"name": "AssistedModeDisengage_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "MRC_TransitionCommand", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-SOTIF-DSM-01",
+        "operational_mode": "Driver_Monitoring_Availability_Tracking",
+        "description": "Supervise internal camera gaze tracking validity and detect uncooperative driver states"
+      },
+      {
+        "sub_intent_id": "SUB-SOTIF-DSM-02",
+        "operational_mode": "DDT_Fallback_to_MRC",
+        "description": "Execute deterministic handover escalation and transition vehicle to minimal risk condition"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-SOTIF-010",
+        "parent_sub_intent_id": "SUB-SOTIF-DSM-02",
+        "statement": "When AssistedModeActive_flag is true and DSM_GazeTrackingAvailable_flag is false for DSM_BlindnessDuration_s >= 10.0 s, HandoverEscalationLevel shall assert stage 3, AssistedModeDisengage_flag shall assert true, and MRC_TransitionCommand shall activate within an FTTI of 50 ms.",
+        "preconditions": "AssistedModeActive_flag == true and DSM_GazeTrackingAvailable_flag == false",
+        "trigger": "DSM_BlindnessDuration_s >= 10.0",
+        "postconditions": "HandoverEscalationLevel == 3 and AssistedModeDisengage_flag == true and MRC_TransitionCommand == true",
+        "timing_ftti_ms": 50,
+        "asil_rating": "ASIL_C"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-SOTIF-010",
+        "parent_req_id": "REQ-SYS2-SOTIF-010",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 100.0,
+          "DSM_GazeTrackingAvailable_flag": false,
+          "DSM_BlindnessDuration_s": 10.2,
+          "AssistedModeActive_flag": true
+        },
+        "expected_assertions": "HandoverEscalationLevel == 3 and AssistedModeDisengage_flag == true and MRC_TransitionCommand == true",
+        "tolerances": { "response_time_max_ms": 50 }
+      }
+    ]
+  }
+}

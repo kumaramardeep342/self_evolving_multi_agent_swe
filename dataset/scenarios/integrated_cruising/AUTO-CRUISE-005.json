@@ -1,0 +1,79 @@
+{
+  "scenario_id": "AUTO-CRUISE-005",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Integrated Cruising",
+    "target_feature": "Highway ACC Target Cut-In Handling",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "euro_ncap_protocol_assisted_driving_v11",
+    "doc_number": 16,
+    "specific_clause": "Euro NCAP Assisted Driving v1.1 Section 4.3.1 (Cut-in)",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "While cruising in Assisted Mode at 120 km/h, an adjacent slower vehicle (70 km/h) performs an aggressive cut-in into the ego travel lane at a critical time-to-collision of 0.5s. The system must quickly classify the intruding target, abort throttle demand, and smoothly assert service brake deceleration to restore safe following distance without colliding.",
+    "operational_design_domain": {
+      "speed_range_kph": [100.0, 130.0],
+      "road_type": "Multi-lane high-speed expressway, straight trajectory, lane width 3.5m",
+      "environmental_conditions": "Daylight, dry surface"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 200.0]},
+        {"name": "CutInVehicleDist_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 100.0]},
+        {"name": "CutInVehicleSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 160.0]},
+        {"name": "CutInVehicleLateralOverlap_pct", "data_type": "float", "unit": "%", "valid_range": [0.0, 100.0]},
+        {"name": "CalculatedCutInTTC_s", "data_type": "float", "unit": "s", "valid_range": [-5.0, 10.0]}
+      ],
+      "output_signals": [
+        {"name": "ACC_BrakeIntervention_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 8.0]},
+        {"name": "FCW_AudioVisualAlert", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-CRUISE-CUTIN-01",
+        "operational_mode": "CutIn_Target_Early_Acquisition",
+        "description": "Recognize boundary-crossing trajectory of adjacent vehicle before full lane occupancy"
+      },
+      {
+        "sub_intent_id": "SUB-CRUISE-CUTIN-02",
+        "operational_mode": "Active_Brake_Distance_Restoration",
+        "description": "Assert service brake deceleration to expand headway gap"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-CRUISE-007",
+        "parent_sub_intent_id": "SUB-CRUISE-CUTIN-02",
+        "statement": "When VehSpd_kph == 120.0 km/h, CutInVehicleLateralOverlap_pct >= 30.0%, and CalculatedCutInTTC_s <= 0.75 s with relative closing speed >= 40 km/h, ACC_BrakeIntervention_mps2 shall assert >= 4.5 m/s^2 within an FTTI of 60 ms and FCW_AudioVisualAlert shall assert true.",
+        "preconditions": "VehSpd_kph >= 110.0 and CutInVehicleSpd_kph < VehSpd_kph",
+        "trigger": "CutInVehicleLateralOverlap_pct >= 30.0 and CalculatedCutInTTC_s <= 0.75",
+        "postconditions": "ACC_BrakeIntervention_mps2 >= 4.5 and FCW_AudioVisualAlert == true",
+        "timing_ftti_ms": 60,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-CRUISE-007",
+        "parent_req_id": "REQ-SYS2-CRUISE-007",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 120.0,
+          "CutInVehicleDist_m": 10.4,
+          "CutInVehicleSpd_kph": 70.0,
+          "CutInVehicleLateralOverlap_pct": 35.0,
+          "CalculatedCutInTTC_s": 0.5
+        },
+        "expected_assertions": "ACC_BrakeIntervention_mps2 >= 4.5 and FCW_AudioVisualAlert == true",
+        "tolerances": { "response_time_max_ms": 60 }
+      }
+    ]
+  }
+}

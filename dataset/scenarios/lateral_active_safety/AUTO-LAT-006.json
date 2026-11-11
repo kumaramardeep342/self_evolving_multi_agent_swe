@@ -1,0 +1,79 @@
+{
+  "scenario_id": "AUTO-LAT-006",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Lateral Control",
+    "target_feature": "Emergency Lane Keeping (ELK) - Car-to-Car Oncoming",
+    "target_asil": "ASIL_C",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "Euro_NCAP_Protocol_Crash_Avoidance_Lane_Departure_Collisions_v12",
+    "doc_number": 19,
+    "specific_clause": "Euro NCAP Lane Departure Protocol v1.2 Section 3.2.1 & 5.2.3.1",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall provide autonomous heading intervention when drifting toward the center lane marker (lateral velocity 0.3 to 0.6 m/s) with an oncoming target vehicle (GVT) approaching in the adjacent oncoming lane at 70 km/h, preventing a head-on collision at a 90% overlap impact point.",
+    "operational_design_domain": {
+      "speed_range_kph": [65.0, 75.0],
+      "road_type": "Two-way undivided carriageway, center dashed line, lane width 3.5m, GVT 1.5m from center line",
+      "environmental_conditions": "Daylight, dry weather, ambient illumination > 2000 lux"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 150.0]},
+        {"name": "OncomingTargetDist_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 250.0]},
+        {"name": "OncomingTargetSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 150.0]},
+        {"name": "LateralVelocity_mps", "data_type": "float", "unit": "m/s", "valid_range": [-2.0, 2.0]},
+        {"name": "CenterLineDist_m", "data_type": "float", "unit": "m", "valid_range": [-1.0, 3.0]}
+      ],
+      "output_signals": [
+        {"name": "ELK_EvasionTorque_Nm", "data_type": "float", "unit": "Nm", "valid_range": [-20.0, 20.0]},
+        {"name": "CollisionOccurred_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-ELK-ONC-01",
+        "operational_mode": "Oncoming_Traffic_Threat_Assessment",
+        "description": "Calculate closing TTC relative to oncoming target and evaluate center line departure"
+      },
+      {
+        "sub_intent_id": "SUB-ELK-ONC-02",
+        "operational_mode": "Autonomous_Evasive_Steering",
+        "description": "Assert heading correction to redirect vehicle away from oncoming path (zero impact)"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-ELK-003",
+        "parent_sub_intent_id": "SUB-ELK-ONC-02",
+        "statement": "When VehSpd_kph == 70.0 km/h, OncomingTargetSpd_kph == 70.0 km/h, LateralVelocity_mps >= 0.3 m/s, and CenterLineDist_m <= 0.3 m with TTC <= 1.5 s, ELK_EvasionTorque_Nm shall assert >= 3.0 Nm within an FTTI of 40 ms ensuring CollisionOccurred_flag remains false.",
+        "preconditions": "VehSpd_kph >= 68.0 and OncomingTargetSpd_kph >= 68.0",
+        "trigger": "CenterLineDist_m <= 0.3 and OncomingTargetDist_m / ((VehSpd_kph + OncomingTargetSpd_kph) / 3.6) <= 1.5",
+        "postconditions": "CollisionOccurred_flag == false",
+        "timing_ftti_ms": 40,
+        "asil_rating": "ASIL_C"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-ELK-004",
+        "parent_req_id": "REQ-SYS2-ELK-003",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 70.0,
+          "OncomingTargetSpd_kph": 70.0,
+          "OncomingTargetDist_m": 58.0,
+          "LateralVelocity_mps": 0.5,
+          "CenterLineDist_m": 0.2
+        },
+        "expected_assertions": "CollisionOccurred_flag == false",
+        "tolerances": { "response_time_max_ms": 40 }
+      }
+    ]
+  }
+}

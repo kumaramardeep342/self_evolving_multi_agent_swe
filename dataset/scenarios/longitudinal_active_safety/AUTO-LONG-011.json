@@ -1,0 +1,70 @@
+{
+  "scenario_id": "AUTO-LONG-011",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Longitudinal Control",
+    "target_feature": "AEB Car-to-Scooter Farside Obstructed (CSFAO-50)",
+    "target_asil": "ASIL_C",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "C-NCAP_2024_Appendix_0_AEB_VRU_Pedestrain_TwoWheeler_Test",
+    "doc_number": 9,
+    "specific_clause": "C-NCAP 2024 Appendix O Section 0.6.2.6",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall detect a motorized scooter crossing perpendicularly from the farside at 20 km/h across the vehicle travel corridor toward a 50% impact point, initiating autonomous emergency braking across vehicle speeds between 20 km/h and 60 km/h to avoid impact.",
+    "operational_design_domain": {
+      "speed_range_kph": [20.0, 60.0],
+      "road_type": "Straight flat dry track with farside parking line obstruction",
+      "environmental_conditions": "Daylight, dry weather, ambient illumination > 2000 lux"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 100.0]},
+        {"name": "ScooterDist_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 90.0]},
+        {"name": "ScooterLateralSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 35.0]}
+      ],
+      "output_signals": [
+        {"name": "FCW_WarnState", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "STANDBY", "ACOUSTIC_OPTICAL"]},
+        {"name": "AEB_DecelRequest_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 9.81]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-CSFAO-01",
+        "operational_mode": "Farside_Scooter_Collision_Avoidance",
+        "description": "Trigger autonomous brake deceleration upon detecting rapid crossing scooter"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-CSFAO-001",
+        "parent_sub_intent_id": "SUB-CSFAO-01",
+        "statement": "When VehSpd_kph is between 20.0 and 60.0 km/h, ScooterLateralSpd_kph == 20.0 km/h, and TTC <= 1.3 s, AEB_DecelRequest_mps2 shall assert >= 6.0 m/s^2 within an FTTI of 50 ms.",
+        "preconditions": "VehSpd_kph >= 20.0 and VehSpd_kph <= 60.0",
+        "trigger": "ScooterDist_m / (VehSpd_kph / 3.6) <= 1.3",
+        "postconditions": "AEB_DecelRequest_mps2 >= 6.0",
+        "timing_ftti_ms": 50,
+        "asil_rating": "ASIL_C"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-CSFAO-001",
+        "parent_req_id": "REQ-SYS2-CSFAO-001",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 60.0,
+          "ScooterDist_m": 21.0,
+          "ScooterLateralSpd_kph": 20.0
+        },
+        "expected_assertions": "AEB_DecelRequest_mps2 >= 6.0",
+        "tolerances": { "response_time_max_ms": 50 }
+      }
+    ]
+  }
+}

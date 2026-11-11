@@ -1,0 +1,80 @@
+{
+  "scenario_id": "AUTO-LAT-002",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Lateral Control",
+    "target_feature": "Lane Departure Warning System (LDWS) - Solid Boundary Spatial Alert",
+    "target_asil": "QM",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "EU Regulation No_130",
+    "doc_number": 1,
+    "specific_clause": "UN/ECE Regulation No. 130 Paragraph 5.4.1 & 6.5.2",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall identify continuous solid line lane markings and provide an intuitive directional warning (haptic steering wheel vibration and flashing optical telltale) indicating the side of unintended departure when the vehicle drifts toward a solid boundary at rates between 0.1 m/s and 0.8 m/s at 65 km/h.",
+    "operational_design_domain": {
+      "speed_range_kph": [60.0, 90.0],
+      "road_type": "Solid delineated boundary line, lane width 3.5 m to 3.7 m",
+      "environmental_conditions": "Daylight, dry paved surface"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 150.0]},
+        {"name": "LateralDriftRate_mps", "data_type": "float", "unit": "m/s", "valid_range": [-2.0, 2.0]},
+        {"name": "DistToLaneEdge_m", "data_type": "float", "unit": "m", "valid_range": [-1.0, 5.0]},
+        {"name": "TurnIndicatorState", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "LEFT", "RIGHT"]},
+        {"name": "LaneMarkingType", "data_type": "enum", "unit": "enum", "valid_range": ["DASHED", "SOLID"]}
+      ],
+      "output_signals": [
+        {"name": "LDW_HapticPulse", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "LDW_VisualFlashing", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "LDW_SideIndicator", "data_type": "enum", "unit": "enum", "valid_range": ["NONE", "LEFT", "RIGHT"]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-LDW-SOLID-01",
+        "operational_mode": "Solid_Boundary_Drift_Identification",
+        "description": "Distinguish continuous solid line departure from intentional lane exit"
+      },
+      {
+        "sub_intent_id": "SUB-LDW-SOLID-02",
+        "operational_mode": "Spatial_Warning_Generation",
+        "description": "Trigger steering vibration and directional optical cue on the departing side"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-LDW-002",
+        "parent_sub_intent_id": "SUB-LDW-SOLID-02",
+        "statement": "When VehSpd_kph >= 60.0 km/h, TurnIndicatorState == OFF, LaneMarkingType == SOLID, and DistToLaneEdge_m <= 0.0 m on the left, LDW_HapticPulse and LDW_VisualFlashing shall assert true with LDW_SideIndicator == LEFT within an FTTI of 40 ms.",
+        "preconditions": "VehSpd_kph >= 60.0 and TurnIndicatorState == OFF and LaneMarkingType == SOLID",
+        "trigger": "DistToLaneEdge_m <= 0.0 and LateralDriftRate_mps > 0.0",
+        "postconditions": "LDW_HapticPulse == true and LDW_VisualFlashing == true and LDW_SideIndicator == LEFT",
+        "timing_ftti_ms": 40,
+        "asil_rating": "QM"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-LDW-004",
+        "parent_req_id": "REQ-SYS2-LDW-002",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 65.0,
+          "LateralDriftRate_mps": 0.5,
+          "DistToLaneEdge_m": -0.02,
+          "TurnIndicatorState": "OFF",
+          "LaneMarkingType": "SOLID"
+        },
+        "expected_assertions": "LDW_HapticPulse == true and LDW_SideIndicator == 'LEFT'",
+        "tolerances": { "response_time_max_ms": 40 }
+      }
+    ]
+  }
+}

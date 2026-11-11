@@ -1,0 +1,72 @@
+{
+  "scenario_id": "AUTO-LONG-014",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Longitudinal Control",
+    "target_feature": "False Reaction Resistance (Pass-Through Gap)",
+    "target_asil": "QM",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "UN Regulation R152e Amendment 1 / final-rule-automatic-emergency-braking-systems-light-vehicles_web-version",
+    "doc_number": 3,
+    "specific_clause": "UN R152 Annex 3 Appendix 2 & NHTSA FMVSS 127 Pass-Through",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall travel in a straight line at 50 km/h passing centrally through a 4.5 m gap between two stationary vehicles parked in adjacent lanes, without initiating collision warnings or commanding emergency brake deceleration.",
+    "operational_design_domain": {
+      "speed_range_kph": [45.0, 55.0],
+      "road_type": "Straight dry asphalt, adjacent parking lanes 4.5 m apart",
+      "environmental_conditions": "Daylight, dry weather, no precipitation"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 100.0]},
+        {"name": "LateralClearanceLeft_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 10.0]},
+        {"name": "LateralClearanceRight_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 10.0]},
+        {"name": "ForwardPathObstacle_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ],
+      "output_signals": [
+        {"name": "FCW_WarnState", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "STANDBY", "ACOUSTIC_OPTICAL"]},
+        {"name": "AEB_DecelRequest_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 9.81]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-FALSE-PASS-01",
+        "operational_mode": "Corridor_Clearance_Verification",
+        "description": "Verify vehicle driving path is clear despite stationary obstacles in adjacent lateral lanes"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-FALSE-002",
+        "parent_sub_intent_id": "SUB-FALSE-PASS-01",
+        "statement": "When ForwardPathObstacle_flag is false and lateral clearance to adjacent stationary vehicles exceeds 1.0 m on each side, AEB_DecelRequest_mps2 shall remain 0.0 and FCW_WarnState shall remain OFF.",
+        "preconditions": "VehSpd_kph >= 45.0 and VehSpd_kph <= 55.0",
+        "trigger": "ForwardPathObstacle_flag == false and LateralClearanceLeft_m >= 1.0 and LateralClearanceRight_m >= 1.0",
+        "postconditions": "AEB_DecelRequest_mps2 == 0.0 and FCW_WarnState == OFF",
+        "timing_ftti_ms": 50,
+        "asil_rating": "QM"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-FALSE-002",
+        "parent_req_id": "REQ-SYS2-FALSE-002",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 50.0,
+          "LateralClearanceLeft_m": 1.25,
+          "LateralClearanceRight_m": 1.25,
+          "ForwardPathObstacle_flag": false
+        },
+        "expected_assertions": "AEB_DecelRequest_mps2 == 0.0 and FCW_WarnState == 'OFF'",
+        "tolerances": { "max_decel_mps2": 0.0 }
+      }
+    ]
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "scenario_id": "AUTO-CRUISE-002",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Integrated Cruising",
+    "target_feature": "ACC Auto-Resume from Standstill",
+    "target_asil": "ASIL_A",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "euro_ncap_protocol_assisted_driving_v11",
+    "doc_number": 16,
+    "specific_clause": "Euro NCAP Assisted Driving v1.1 Section 3.2.5 (Auto-Resume)",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "When the ego vehicle has been brought to a standstill by Stop-and-Go ACC, if the lead vehicle moves off within a stationary duration of <= 3.0 seconds, the system shall automatically release the standstill hold and smoothly accelerate the vehicle without requiring driver tap-on or throttle input, verifying no road users cross in the blind forward zone.",
+    "operational_design_domain": {
+      "speed_range_kph": [0.0, 30.0],
+      "road_type": "Highway lane or stopped traffic queue",
+      "environmental_conditions": "Daylight or illuminated nighttime, no direct front obstruction"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "StandstillDuration_s", "data_type": "float", "unit": "s", "valid_range": [0.0, 300.0]},
+        {"name": "LeadVehicleMovingOff_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "LeadVehicleDist_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 50.0]},
+        {"name": "ForwardPedestrianDetected_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "DriverResumeTap_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ],
+      "output_signals": [
+        {"name": "StandstillHoldRelease_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "DriveOffAcceleration_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 2.5]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-CRUISE-RESUME-01",
+        "operational_mode": "Auto_Drive_Off_Arbitration",
+        "description": "Arbitrate automatic launch when standstill time is within 3s threshold and path is clear"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-CRUISE-003",
+        "parent_sub_intent_id": "SUB-CRUISE-RESUME-01",
+        "statement": "When LeadVehicleMovingOff_flag == true, StandstillDuration_s <= 3.0 s, and ForwardPedestrianDetected_flag == false, StandstillHoldRelease_flag shall assert true and DriveOffAcceleration_mps2 shall ramp smoothly between 0.5 and 2.0 m/s^2 within an FTTI of 80 ms.",
+        "preconditions": "StandstillDuration_s <= 3.0 and ForwardPedestrianDetected_flag == false",
+        "trigger": "LeadVehicleMovingOff_flag == true and LeadVehicleDist_m >= 3.5",
+        "postconditions": "StandstillHoldRelease_flag == true and DriveOffAcceleration_mps2 >= 0.5",
+        "timing_ftti_ms": 80,
+        "asil_rating": "ASIL_A"
+      },
+      {
+        "req_id": "REQ-SYS2-CRUISE-004",
+        "parent_sub_intent_id": "SUB-CRUISE-RESUME-01",
+        "statement": "If StandstillDuration_s > 3.0 s, automatic drive-off shall remain inhibited until DriverResumeTap_flag == true.",
+        "preconditions": "StandstillDuration_s > 3.0",
+        "trigger": "DriverResumeTap_flag == false",
+        "postconditions": "StandstillHoldRelease_flag == false and DriveOffAcceleration_mps2 == 0.0",
+        "timing_ftti_ms": 50,
+        "asil_rating": "ASIL_A"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-CRUISE-003",
+        "parent_req_id": "REQ-SYS2-CRUISE-003",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "StandstillDuration_s": 2.1,
+          "LeadVehicleMovingOff_flag": true,
+          "LeadVehicleDist_m": 4.0,
+          "ForwardPedestrianDetected_flag": false,
+          "DriverResumeTap_flag": false
+        },
+        "expected_assertions": "StandstillHoldRelease_flag == true and DriveOffAcceleration_mps2 >= 0.5",
+        "tolerances": { "response_time_max_ms": 80 }
+      },
+      {
+        "test_id": "TC-SYS5-CRUISE-004",
+        "parent_req_id": "REQ-SYS2-CRUISE-004",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "StandstillDuration_s": 3.5,
+          "LeadVehicleMovingOff_flag": true,
+          "LeadVehicleDist_m": 4.5,
+          "ForwardPedestrianDetected_flag": false,
+          "DriverResumeTap_flag": false
+        },
+        "expected_assertions": "StandstillHoldRelease_flag == false and DriveOffAcceleration_mps2 == 0.0",
+        "tolerances": { "notes": "Stationary hold exceeds 3.0s: automatic drive-off inhibited awaiting driver input" }
+      }
+    ]
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "scenario_id": "AUTO-LAT-008",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Lateral Control",
+    "target_feature": "Emergency Lane Keeping (ELK) - Car-to-Motorcyclist Oncoming",
+    "target_asil": "ASIL_C",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "Euro_NCAP_Protocol_Crash_Avoidance_Lane_Departure_Collisions_v12",
+    "doc_number": 19,
+    "specific_clause": "Euro NCAP Lane Departure Protocol v1.2 Section 3.2.3 & Figure 3-7",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall detect an oncoming powered two-wheeler (motorcyclist target EMT) traveling in the adjacent oncoming lane at 70 km/h, 1.0 m from the center dashed line. When drifting toward the centerline at 0.3 to 0.6 m/s, the system must execute evasive heading correction ensuring the vehicle profile clears the motorcycle virtual box by > 0.3 m.",
+    "operational_design_domain": {
+      "speed_range_kph": [65.0, 75.0],
+      "road_type": "Two-lane carriageway, EMT 1.0 m from dashed centerline",
+      "environmental_conditions": "Daylight, dry asphalt, visibility > 1 km"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 150.0]},
+        {"name": "MotorcycleDist_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 250.0]},
+        {"name": "MotorcycleSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 150.0]},
+        {"name": "LateralVelocity_mps", "data_type": "float", "unit": "m/s", "valid_range": [-2.0, 2.0]}
+      ],
+      "output_signals": [
+        {"name": "ELK_PTW_EvasionTorque_Nm", "data_type": "float", "unit": "Nm", "valid_range": [-20.0, 20.0]},
+        {"name": "PTW_VirtualBoxClearance_m", "data_type": "float", "unit": "m", "valid_range": [-2.0, 5.0]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-ELK-CM-ONC-01",
+        "operational_mode": "Motorcyclist_Classification_and_Clearance",
+        "description": "Classify narrow PTW target and track clearance relative to PTW virtual bounding box"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-ELK-005",
+        "parent_sub_intent_id": "SUB-ELK-CM-ONC-01",
+        "statement": "When VehSpd_kph == 70.0 km/h, MotorcycleSpd_kph == 70.0 km/h, and LateralVelocity_mps >= 0.3 m/s toward oncoming lane with TTC <= 1.4 s, ELK_PTW_EvasionTorque_Nm shall assert >= 3.0 Nm within an FTTI of 40 ms ensuring PTW_VirtualBoxClearance_m > 0.3 m.",
+        "preconditions": "VehSpd_kph >= 68.0 and MotorcycleSpd_kph >= 68.0",
+        "trigger": "MotorcycleDist_m / ((VehSpd_kph + MotorcycleSpd_kph) / 3.6) <= 1.4 and LateralVelocity_mps >= 0.3",
+        "postconditions": "PTW_VirtualBoxClearance_m > 0.3",
+        "timing_ftti_ms": 40,
+        "asil_rating": "ASIL_C"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-ELK-006",
+        "parent_req_id": "REQ-SYS2-ELK-005",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 70.0,
+          "MotorcycleSpd_kph": 70.0,
+          "MotorcycleDist_m": 50.0,
+          "LateralVelocity_mps": 0.4
+        },
+        "expected_assertions": "PTW_VirtualBoxClearance_m > 0.3",
+        "tolerances": { "min_clearance_m": 0.3, "response_time_max_ms": 40 }
+      }
+    ]
+  }
+}
