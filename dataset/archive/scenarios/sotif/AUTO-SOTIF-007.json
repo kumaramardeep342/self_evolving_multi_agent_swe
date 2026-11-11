@@ -1,0 +1,72 @@
+{
+  "scenario_id": "AUTO-SOTIF-007",
+  "metadata": {
+    "domain": "System Safety",
+    "sub_system": "SOTIF / Sensor Degraded",
+    "target_feature": "Multipath Ghost Reflection Filtering",
+    "target_asil": "QM",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "ISO 21448:2022 / final-rule-automatic-emergency-braking-systems-light-vehicles_web-version",
+    "doc_number": 28,
+    "specific_clause": "ISO 21448:2022 Clause 7.3.3 & NHTSA FMVSS 127 False Activation",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "When driving through a narrow steel-lined roadway tunnel at 80 km/h where radio frequency reflections bounce off metallic sidewalls creating spurious stationary ghost targets in the vehicle lane, the radar tracking algorithm must apply doppler consistency verification, reject stationary multipath illusions, and maintain forward propulsion without phantom braking.",
+    "operational_design_domain": {
+      "speed_range_kph": [60.0, 100.0],
+      "road_type": "Curved or straight metallic/concrete enclosed tunnel with reverberant walls",
+      "environmental_conditions": "Artificial tunnel lighting, severe electromagnetic multipath scattering"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 160.0]},
+        {"name": "TunnelEnvironmentDetected_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "RadarMultipathIndicator", "data_type": "float", "unit": "index", "valid_range": [0.0, 1.0]},
+        {"name": "RawClusterVelocity_mps", "data_type": "float", "unit": "m/s", "valid_range": [-50.0, 50.0]}
+      ],
+      "output_signals": [
+        {"name": "AEB_BrakeCommand_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 9.81]},
+        {"name": "GhostTargetFiltered_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-SOTIF-GHOST-01",
+        "operational_mode": "Multipath_Target_Filtering",
+        "description": "Correlate range rate with ego velocity to identify mirrored electromagnetic ghost returns"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-SOTIF-009",
+        "parent_sub_intent_id": "SUB-SOTIF-GHOST-01",
+        "statement": "When TunnelEnvironmentDetected_flag is true and RadarMultipathIndicator >= 0.70 while ego path is physically clear, GhostTargetFiltered_flag shall assert true and AEB_BrakeCommand_mps2 shall remain 0.0 m/s^2 within 40 ms.",
+        "preconditions": "VehSpd_kph >= 60.0 and TunnelEnvironmentDetected_flag == true",
+        "trigger": "RadarMultipathIndicator >= 0.70",
+        "postconditions": "GhostTargetFiltered_flag == true and AEB_BrakeCommand_mps2 == 0.0",
+        "timing_ftti_ms": 40,
+        "asil_rating": "QM"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-SOTIF-009",
+        "parent_req_id": "REQ-SYS2-SOTIF-009",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 80.0,
+          "TunnelEnvironmentDetected_flag": true,
+          "RadarMultipathIndicator": 0.85,
+          "RawClusterVelocity_mps": -22.2
+        },
+        "expected_assertions": "GhostTargetFiltered_flag == true and AEB_BrakeCommand_mps2 == 0.0",
+        "tolerances": { "max_decel_mps2": 0.0, "response_time_max_ms": 40 }
+      }
+    ]
+  }
+}

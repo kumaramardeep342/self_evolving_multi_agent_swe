@@ -1,0 +1,90 @@
+{
+  "scenario_id": "AUTO-LAT-011",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Lateral Control",
+    "target_feature": "Closing Vehicle Warning (CVW) Type II Rear Zone",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "iso-17387-2026",
+    "doc_number": 25,
+    "specific_clause": "ISO 17387:2026 Clause 4.1.3 & 4.2 (Type FAV)",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall detect fast-approaching target vehicles closing from the rear in adjacent lanes with closing speeds up to 20 m/s (72 km/h relative closing speed, Type FAV). If the calculated Time-To-Collision (TTC) is <= 2.5 s, the system must trigger a closing vehicle warning on the respective side to prevent dangerous lane change execution.",
+    "operational_design_domain": {
+      "speed_range_kph": [50.0, 130.0],
+      "road_type": "Straight highway or gentle curvature (radius >= 500 m)",
+      "environmental_conditions": "Clear weather, ambient illumination > 1000 lux"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 200.0]},
+        {"name": "TargetRearClearance_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 150.0]},
+        {"name": "TargetClosingSpeed_mps", "data_type": "float", "unit": "m/s", "valid_range": [0.0, 30.0]},
+        {"name": "TargetInRearZone", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ],
+      "output_signals": [
+        {"name": "CVW_AlertLevel", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "LEVEL_1_WARNING", "LEVEL_2_ACTIVE"]},
+        {"name": "CalculatedTTC_s", "data_type": "float", "unit": "s", "valid_range": [0.0, 10.0]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-CVW-01",
+        "operational_mode": "Rear_TTC_Calculation",
+        "description": "Calculate rear closing speed and dynamic TTC = rear_clearance / closing_speed"
+      },
+      {
+        "sub_intent_id": "SUB-CVW-02",
+        "operational_mode": "Closing_Vehicle_Alert_Trigger",
+        "description": "Emit warning prior to TTC dropping below 2.5 s"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-CVW-001",
+        "parent_sub_intent_id": "SUB-CVW-02",
+        "statement": "When TargetInRearZone == true and TargetClosingSpeed_mps <= 20.0 m/s with TargetRearClearance_m / TargetClosingSpeed_mps <= 2.5 s, CVW_AlertLevel shall assert LEVEL_1_WARNING within an FTTI of 60 ms.",
+        "preconditions": "TargetInRearZone == true and TargetClosingSpeed_mps > 0.0",
+        "trigger": "TargetRearClearance_m / TargetClosingSpeed_mps <= 2.5",
+        "postconditions": "CVW_AlertLevel == LEVEL_1_WARNING",
+        "timing_ftti_ms": 60,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-CVW-001",
+        "parent_req_id": "REQ-SYS2-CVW-001",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 100.0,
+          "TargetRearClearance_m": 45.0,
+          "TargetClosingSpeed_mps": 20.0,
+          "TargetInRearZone": true
+        },
+        "expected_assertions": "CVW_AlertLevel == 'LEVEL_1_WARNING'",
+        "tolerances": { "response_time_max_ms": 60 }
+      },
+      {
+        "test_id": "TC-SYS5-CVW-002",
+        "parent_req_id": "REQ-SYS2-CVW-001",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 100.0,
+          "TargetRearClearance_m": 52.0,
+          "TargetClosingSpeed_mps": 20.0,
+          "TargetInRearZone": true
+        },
+        "expected_assertions": "CVW_AlertLevel == 'OFF'",
+        "tolerances": { "notes": "TTC = 2.6s (> 2.5s threshold): alert remains OFF" }
+      }
+    ]
+  }
+}

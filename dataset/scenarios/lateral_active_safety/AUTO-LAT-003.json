@@ -1,0 +1,77 @@
+{
+  "scenario_id": "AUTO-LAT-003",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Lateral Control",
+    "target_feature": "Lane Keeping Assist (LKA) - Heading Correction",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "Euro_NCAP_Protocol_Crash_Avoidance_Lane_Departure_Collisions_v12",
+    "doc_number": 19,
+    "specific_clause": "Euro NCAP Lane Departure Protocol v1.2 Section 3.1 & 5.2.2",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall provide active heading correction via electric power steering (EPS) when the vehicle drifts toward a delineated lane marking at lateral departure speeds between 0.2 m/s and 0.6 m/s at travel speeds from 60 km/h to 100 km/h, smoothly restoring the vehicle to the lane without exceeding 40 deg/s steering wheel velocity.",
+    "operational_design_domain": {
+      "speed_range_kph": [60.0, 100.0],
+      "road_type": "Delineated travel lane, width 3.5 m to 3.7 m, solid or dashed boundary",
+      "environmental_conditions": "Daylight, dry asphalt, lane edge visible"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 180.0]},
+        {"name": "LateralVelocity_mps", "data_type": "float", "unit": "m/s", "valid_range": [-2.0, 2.0]},
+        {"name": "DistanceToLaneEdge_m", "data_type": "float", "unit": "m", "valid_range": [-1.0, 4.0]},
+        {"name": "DriverHandTorque_Nm", "data_type": "float", "unit": "Nm", "valid_range": [-50.0, 50.0]}
+      ],
+      "output_signals": [
+        {"name": "LKA_SteeringTorque_Nm", "data_type": "float", "unit": "Nm", "valid_range": [-10.0, 10.0]},
+        {"name": "LKA_Status", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "ACTIVE", "SUPPRESSED"]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-LKA-01",
+        "operational_mode": "Departure_Trajectory_Prediction",
+        "description": "Calculate time to lane crossing and lateral offset progression"
+      },
+      {
+        "sub_intent_id": "SUB-LKA-02",
+        "operational_mode": "Heading_Correction_Actuation",
+        "description": "Command corrective EPS steering torque to maintain the vehicle within the lane"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-LKA-001",
+        "parent_sub_intent_id": "SUB-LKA-02",
+        "statement": "When VehSpd_kph is between 60.0 and 100.0 km/h, DistanceToLaneEdge_m <= 0.1 m, and LateralVelocity_mps between 0.2 and 0.6 m/s with DriverHandTorque_Nm < 1.5 Nm, LKA_SteeringTorque_Nm shall command counter-steering torque between 1.0 and 3.0 Nm within an FTTI of 60 ms.",
+        "preconditions": "VehSpd_kph >= 60.0 and VehSpd_kph <= 100.0 and abs(DriverHandTorque_Nm) < 1.5",
+        "trigger": "DistanceToLaneEdge_m <= 0.1 and abs(LateralVelocity_mps) >= 0.2",
+        "postconditions": "LKA_Status == ACTIVE and abs(LKA_SteeringTorque_Nm) >= 1.0",
+        "timing_ftti_ms": 60,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-LKA-001",
+        "parent_req_id": "REQ-SYS2-LKA-001",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 70.0,
+          "LateralVelocity_mps": 0.4,
+          "DistanceToLaneEdge_m": 0.05,
+          "DriverHandTorque_Nm": 0.0
+        },
+        "expected_assertions": "LKA_Status == 'ACTIVE' and abs(LKA_SteeringTorque_Nm) >= 1.0",
+        "tolerances": { "response_time_max_ms": 60 }
+      }
+    ]
+  }
+}

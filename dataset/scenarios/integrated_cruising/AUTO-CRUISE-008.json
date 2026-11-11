@@ -1,0 +1,78 @@
+{
+  "scenario_id": "AUTO-CRUISE-008",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Integrated Cruising",
+    "target_feature": "Driver Inattention Mitigation & Emergency Safe Stop",
+    "target_asil": "ASIL_C",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "ADAS Regulations (EU GSR) / euro_ncap_protocol_assisted_driving_v11",
+    "doc_number": 4,
+    "specific_clause": "EU GSR Slide 15 (Drowsiness/Distraction) & Euro NCAP AD Sec 2.3 & 4.2.3",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "While cruising in Assisted Mode at 80 km/h, if the Driver Monitoring System (DSM) detects that the driver has eyes off the road or remains unresponsive to escalating hands-off/distraction warnings for > 15 seconds (non-transient sleep or medical incapacitation), the system must initiate an emergency minimum-risk maneuver, illuminating hazard lights, keeping the vehicle centered in lane, and decelerating smoothly to a controlled stop.",
+    "operational_design_domain": {
+      "speed_range_kph": [60.0, 130.0],
+      "road_type": "Motorway or dual carriageway with delineated lane markings",
+      "environmental_conditions": "Daylight or darkness, operational camera DSM"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 200.0]},
+        {"name": "DriverGazeAwayDuration_s", "data_type": "float", "unit": "s", "valid_range": [0.0, 60.0]},
+        {"name": "HandsOnSteeringDetected_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "DriverUnresponsiveWarningStage", "data_type": "int", "unit": "stage", "valid_range": [0, 3]}
+      ],
+      "output_signals": [
+        {"name": "EmergencyStopManeuverActive_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "ControlledStopDecel_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 4.0]},
+        {"name": "HazardLightsCommand", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-CRUISE-SAFESTOP-01",
+        "operational_mode": "Driver_Availability_Escalation",
+        "description": "Escalate optical and acoustic warnings upon prolonged hands-off and gaze distraction"
+      },
+      {
+        "sub_intent_id": "SUB-CRUISE-SAFESTOP-02",
+        "operational_mode": "Minimum_Risk_Controlled_Stop",
+        "description": "Execute controlled in-lane deceleration to stop with hazard lights illuminated"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-CRUISE-010",
+        "parent_sub_intent_id": "SUB-CRUISE-SAFESTOP-02",
+        "statement": "When DriverUnresponsiveWarningStage == 3 and DriverGazeAwayDuration_s >= 15.0 s with HandsOnSteeringDetected_flag == false while cruising at VehSpd_kph >= 60.0 km/h, EmergencyStopManeuverActive_flag and HazardLightsCommand shall assert true within 100 ms, commanding ControlledStopDecel_mps2 between 1.5 and 3.0 m/s^2 until VehSpd_kph == 0.0 km/h.",
+        "preconditions": "DriverUnresponsiveWarningStage == 3 and HandsOnSteeringDetected_flag == false",
+        "trigger": "DriverGazeAwayDuration_s >= 15.0",
+        "postconditions": "EmergencyStopManeuverActive_flag == true and HazardLightsCommand == true and ControlledStopDecel_mps2 >= 1.5",
+        "timing_ftti_ms": 100,
+        "asil_rating": "ASIL_C"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-CRUISE-010",
+        "parent_req_id": "REQ-SYS2-CRUISE-010",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 80.0,
+          "DriverGazeAwayDuration_s": 15.5,
+          "HandsOnSteeringDetected_flag": false,
+          "DriverUnresponsiveWarningStage": 3
+        },
+        "expected_assertions": "EmergencyStopManeuverActive_flag == true and HazardLightsCommand == true and ControlledStopDecel_mps2 >= 1.5",
+        "tolerances": { "response_time_max_ms": 100 }
+      }
+    ]
+  }
+}

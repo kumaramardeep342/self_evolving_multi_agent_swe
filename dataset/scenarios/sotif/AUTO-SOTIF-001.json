@@ -1,0 +1,101 @@
+{
+  "scenario_id": "AUTO-SOTIF-001",
+  "metadata": {
+    "domain": "System Safety",
+    "sub_system": "SOTIF / Sensor Degraded",
+    "target_feature": "Camera Sun Glare Saturation & Safe Fallback",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "ISO 21448:2022",
+    "doc_number": 28,
+    "specific_clause": "ISO 21448:2022 Clause 7.3.3 & Euro NCAP Assisted Driving v1.1 Sec 4.1.2",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "When driving eastbound during sunrise with low-angle direct solar glare saturating the forward camera image sensor (> 80% pixel overexposure), the system must detect optical performance degradation without hardware fault, inhibit autonomous steering/braking reliance on optical targets, transition control to radar-only fallback within 100 ms, and alert the driver via visual telltale.",
+    "operational_design_domain": {
+      "speed_range_kph": [30.0, 120.0],
+      "road_type": "Open highway or arterial road heading into direct sunrise/sunset",
+      "environmental_conditions": "Direct low-angle sunlight (< 15 deg elevation), lux > 90000 lux"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 200.0]},
+        {"name": "CameraPixelOverexposure_pct", "data_type": "float", "unit": "%", "valid_range": [0.0, 100.0]},
+        {"name": "CameraOpticalConfidence_pct", "data_type": "float", "unit": "%", "valid_range": [0.0, 100.0]},
+        {"name": "RadarTrackingConfidence_pct", "data_type": "float", "unit": "%", "valid_range": [0.0, 100.0]}
+      ],
+      "output_signals": [
+        {"name": "SensorDegradationTelltale", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "PerceptionOperationalMode", "data_type": "enum", "unit": "enum", "valid_range": ["FUSED_DUAL", "RADAR_ONLY_DEGRADED", "SUSPENDED"]},
+        {"name": "CameraObjectValidity_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-SOTIF-GLARE-01",
+        "operational_mode": "Optical_Blindness_Detection",
+        "description": "Identify functional insufficiency caused by environmental optical saturation"
+      },
+      {
+        "sub_intent_id": "SUB-SOTIF-GLARE-02",
+        "operational_mode": "Graceful_Degradation_Transition",
+        "description": "Downgrade perception from fused dual-sensor to radar-only fallback mode"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-SOTIF-001",
+        "parent_sub_intent_id": "SUB-SOTIF-GLARE-01",
+        "statement": "When CameraPixelOverexposure_pct exceeds 80.0% for longer than 60 ms, CameraObjectValidity_flag shall assert false and SensorDegradationTelltale shall illuminate within an FTTI of 100 ms.",
+        "preconditions": "VehSpd_kph >= 30.0",
+        "trigger": "CameraPixelOverexposure_pct >= 80.0",
+        "postconditions": "CameraObjectValidity_flag == false and SensorDegradationTelltale == true",
+        "timing_ftti_ms": 100,
+        "asil_rating": "ASIL_B"
+      },
+      {
+        "req_id": "REQ-SYS2-SOTIF-002",
+        "parent_sub_intent_id": "SUB-SOTIF-GLARE-02",
+        "statement": "When CameraObjectValidity_flag is false and RadarTrackingConfidence_pct >= 75.0%, PerceptionOperationalMode shall switch to RADAR_ONLY_DEGRADED without disengaging longitudinal cruise authority.",
+        "preconditions": "CameraObjectValidity_flag == false",
+        "trigger": "RadarTrackingConfidence_pct >= 75.0",
+        "postconditions": "PerceptionOperationalMode == RADAR_ONLY_DEGRADED",
+        "timing_ftti_ms": 80,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-SOTIF-001",
+        "parent_req_id": "REQ-SYS2-SOTIF-001",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 80.0,
+          "CameraPixelOverexposure_pct": 85.0,
+          "CameraOpticalConfidence_pct": 15.0,
+          "RadarTrackingConfidence_pct": 90.0
+        },
+        "expected_assertions": "CameraObjectValidity_flag == false and SensorDegradationTelltale == true",
+        "tolerances": { "response_time_max_ms": 100 }
+      },
+      {
+        "test_id": "TC-SYS5-SOTIF-002",
+        "parent_req_id": "REQ-SYS2-SOTIF-002",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 80.0,
+          "CameraPixelOverexposure_pct": 82.0,
+          "CameraOpticalConfidence_pct": 10.0,
+          "RadarTrackingConfidence_pct": 76.0
+        },
+        "expected_assertions": "PerceptionOperationalMode == 'RADAR_ONLY_DEGRADED'",
+        "tolerances": { "response_time_max_ms": 80 }
+      }
+    ]
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "scenario_id": "AUTO-LONG-007",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Longitudinal Control",
+    "target_feature": "AEB Pedestrian Crossing Nearside Child Obstructed (CPNCO-25)",
+    "target_asil": "ASIL_D",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "C-NCAP_2024_Appendix_0_AEB_VRU_Pedestrain_TwoWheeler_Test / UN Regulation R152e Amendment 1",
+    "doc_number": 9,
+    "specific_clause": "C-NCAP 2024 App O Section 0.6.1.7 & UN R152 Para 5.2.2",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall provide autonomous emergency braking when a child pedestrian (PTC) emerges from behind parked obstacle vehicles (OV) crossing perpendicularly from the nearside at 5 km/h toward a 25% impact location, mitigating collision across vehicle speeds between 20 km/h and 60 km/h.",
+    "operational_design_domain": {
+      "speed_range_kph": [20.0, 60.0],
+      "road_type": "Straight urban road with stationary parked obstacle vehicles on nearside lane boundary",
+      "environmental_conditions": "Daylight, illumination > 2000 lux, dry road"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 100.0]},
+        {"name": "ChildTargetDist_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 60.0]},
+        {"name": "ChildLateralSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 10.0]},
+        {"name": "TargetOccluded_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ],
+      "output_signals": [
+        {"name": "FCW_WarnState", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "STANDBY", "ACOUSTIC_OPTICAL"]},
+        {"name": "AEB_DecelRequest_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 9.81]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-CPNCO-01",
+        "operational_mode": "Occluded_Pedestrian_Acquisition",
+        "description": "Detect child dummy emerging from behind parked vehicles into vehicle corridor"
+      },
+      {
+        "sub_intent_id": "SUB-CPNCO-02",
+        "operational_mode": "Emergency_Brake_Actuation",
+        "description": "Command maximum brake force to prevent or achieve maximum speed reduction prior to impact"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-CPNCO-001",
+        "parent_sub_intent_id": "SUB-CPNCO-02",
+        "statement": "Upon TargetOccluded_flag transitioning to false and TTC <= 1.0 s with ChildLateralSpd_kph == 5.0 km/h, AEB_DecelRequest_mps2 shall assert >= 6.5 m/s^2 within an FTTI of 40 ms.",
+        "preconditions": "VehSpd_kph >= 20.0 and VehSpd_kph <= 60.0",
+        "trigger": "ChildTargetDist_m / (VehSpd_kph / 3.6) <= 1.0 and TargetOccluded_flag == false",
+        "postconditions": "AEB_DecelRequest_mps2 >= 6.5",
+        "timing_ftti_ms": 40,
+        "asil_rating": "ASIL_D"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-CPNCO-001",
+        "parent_req_id": "REQ-SYS2-CPNCO-001",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 30.0,
+          "ChildTargetDist_m": 8.0,
+          "ChildLateralSpd_kph": 5.0,
+          "TargetOccluded_flag": false
+        },
+        "expected_assertions": "AEB_DecelRequest_mps2 >= 6.5",
+        "tolerances": { "response_time_max_ms": 40 }
+      }
+    ]
+  }
+}

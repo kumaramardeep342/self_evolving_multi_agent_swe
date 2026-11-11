@@ -1,0 +1,72 @@
+{
+  "scenario_id": "AUTO-CRUISE-007",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Integrated Cruising",
+    "target_feature": "Continuous Steering Assistance & Driver Override Collaboration",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "euro_ncap_protocol_assisted_driving_v11",
+    "doc_number": 16,
+    "specific_clause": "Euro NCAP Assisted Driving v1.1 Section 2.4 (Driving Collaboration) & 3.3",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "While Lane Centering is actively steering the vehicle along the lane centerline at 72 km/h (45 mph), if the driver manually applies a sine-wave steering input to maneuver around an in-lane pothole without using turn signals, the system must allow manual override with an applied steering torque increase of < 2.5 Nm, smoothly blending assistance without abrupt disconnection or fighting the driver.",
+    "operational_design_domain": {
+      "speed_range_kph": [65.0, 80.0],
+      "road_type": "Fully marked highway lane, width 3.5 m, straight trajectory",
+      "environmental_conditions": "Daylight, dry asphalt"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 160.0]},
+        {"name": "DriverAppliedTorque_Nm", "data_type": "float", "unit": "Nm", "valid_range": [-30.0, 30.0]},
+        {"name": "TurnSignalActive_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "LaneCenteringActive_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ],
+      "output_signals": [
+        {"name": "EPS_AssistTorque_Nm", "data_type": "float", "unit": "Nm", "valid_range": [-10.0, 10.0]},
+        {"name": "SteeringCollaborationState", "data_type": "enum", "unit": "enum", "valid_range": ["ACTIVE_GUIDANCE", "DRIVER_OVERRIDE_COOPERATIVE", "DISENGAGED"]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-CRUISE-COLLAB-01",
+        "operational_mode": "Collaborative_Steering_Control",
+        "description": "Blend EPS centering assist during driver evasive input without excessive resistance"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-CRUISE-009",
+        "parent_sub_intent_id": "SUB-CRUISE-COLLAB-01",
+        "statement": "While LaneCenteringActive_flag is true and VehSpd_kph == 72.0 km/h, if abs(DriverAppliedTorque_Nm) exceeds 1.5 Nm during an in-lane avoidance maneuver without turn signals, SteeringCollaborationState shall transition to DRIVER_OVERRIDE_COOPERATIVE and total resistive torque increase shall not exceed 2.5 Nm.",
+        "preconditions": "LaneCenteringActive_flag == true and TurnSignalActive_flag == false",
+        "trigger": "abs(DriverAppliedTorque_Nm) >= 1.5",
+        "postconditions": "SteeringCollaborationState == DRIVER_OVERRIDE_COOPERATIVE and abs(EPS_AssistTorque_Nm) <= 2.5",
+        "timing_ftti_ms": 40,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-CRUISE-009",
+        "parent_req_id": "REQ-SYS2-CRUISE-009",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 72.0,
+          "DriverAppliedTorque_Nm": 2.2,
+          "TurnSignalActive_flag": false,
+          "LaneCenteringActive_flag": true
+        },
+        "expected_assertions": "SteeringCollaborationState == 'DRIVER_OVERRIDE_COOPERATIVE' and abs(EPS_AssistTorque_Nm) <= 2.5",
+        "tolerances": { "torque_tolerance_Nm": 0.2, "response_time_max_ms": 40 }
+      }
+    ]
+  }
+}

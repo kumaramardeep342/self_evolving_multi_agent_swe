@@ -1,0 +1,100 @@
+{
+  "scenario_id": "AUTO-LAT-010",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Lateral Control",
+    "target_feature": "Blind Spot Warning (BSW) Type I Adjacent Zone Presence",
+    "target_asil": "QM",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "iso-17387-2026",
+    "doc_number": 25,
+    "specific_clause": "ISO 17387:2026 Clause 4.1.2 & 5.2.3",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall detect target vehicles residing within the defined left or right adjacent blind spot zones (extending from driver eye position to 3.0 m rearward) and display a continuous visual indicator on the corresponding exterior rearview mirror, escalating to flashing or acoustic alert if the driver activates the turn indicator toward the occupied lane.",
+    "operational_design_domain": {
+      "speed_range_kph": [20.0, 140.0],
+      "road_type": "Multi-lane roadway, lateral clearance 0.5m to 3.0m",
+      "environmental_conditions": "Day/night, all clear to moderate weather"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 200.0]},
+        {"name": "TargetInLeftAdjacentZone", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "TargetInRightAdjacentZone", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "TurnSignalCommand", "data_type": "enum", "unit": "enum", "valid_range": ["NONE", "LEFT", "RIGHT"]}
+      ],
+      "output_signals": [
+        {"name": "BSW_LeftAlertState", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "CONSTANT_VISUAL", "FLASHING_ACOUSTIC"]},
+        {"name": "BSW_RightAlertState", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "CONSTANT_VISUAL", "FLASHING_ACOUSTIC"]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-LCDAS-ADJ-01",
+        "operational_mode": "Adjacent_Zone_Presence_Monitoring",
+        "description": "Determine static or dynamic vehicle presence in adjacent blind spot zone"
+      },
+      {
+        "sub_intent_id": "SUB-LCDAS-ADJ-02",
+        "operational_mode": "Warning_Escalation",
+        "description": "Escalate informational visual warning to active warning upon turn signal engagement"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-LCDAS-001",
+        "parent_sub_intent_id": "SUB-LCDAS-ADJ-01",
+        "statement": "When VehSpd_kph >= 20.0 km/h and TargetInLeftAdjacentZone == true with TurnSignalCommand == NONE, BSW_LeftAlertState shall assert CONSTANT_VISUAL within an FTTI of 100 ms.",
+        "preconditions": "VehSpd_kph >= 20.0 and TurnSignalCommand == NONE",
+        "trigger": "TargetInLeftAdjacentZone == true",
+        "postconditions": "BSW_LeftAlertState == CONSTANT_VISUAL",
+        "timing_ftti_ms": 100,
+        "asil_rating": "QM"
+      },
+      {
+        "req_id": "REQ-SYS2-LCDAS-002",
+        "parent_sub_intent_id": "SUB-LCDAS-ADJ-02",
+        "statement": "When TargetInLeftAdjacentZone == true and TurnSignalCommand transitions to LEFT, BSW_LeftAlertState shall escalate to FLASHING_ACOUSTIC within an FTTI of 50 ms.",
+        "preconditions": "TargetInLeftAdjacentZone == true",
+        "trigger": "TurnSignalCommand == LEFT",
+        "postconditions": "BSW_LeftAlertState == FLASHING_ACOUSTIC",
+        "timing_ftti_ms": 50,
+        "asil_rating": "QM"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-LCDAS-001",
+        "parent_req_id": "REQ-SYS2-LCDAS-001",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 60.0,
+          "TargetInLeftAdjacentZone": true,
+          "TargetInRightAdjacentZone": false,
+          "TurnSignalCommand": "NONE"
+        },
+        "expected_assertions": "BSW_LeftAlertState == 'CONSTANT_VISUAL'",
+        "tolerances": { "response_time_max_ms": 100 }
+      },
+      {
+        "test_id": "TC-SYS5-LCDAS-002",
+        "parent_req_id": "REQ-SYS2-LCDAS-002",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 60.0,
+          "TargetInLeftAdjacentZone": true,
+          "TargetInRightAdjacentZone": false,
+          "TurnSignalCommand": "LEFT"
+        },
+        "expected_assertions": "BSW_LeftAlertState == 'FLASHING_ACOUSTIC'",
+        "tolerances": { "response_time_max_ms": 50 }
+      }
+    ]
+  }
+}

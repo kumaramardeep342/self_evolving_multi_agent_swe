@@ -1,0 +1,73 @@
+{
+  "scenario_id": "AUTO-SOTIF-006",
+  "metadata": {
+    "domain": "System Safety",
+    "sub_system": "SOTIF / Sensor Degraded",
+    "target_feature": "Uncommon Infrastructure SOTIF Handling",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "ISO 21448:2022",
+    "doc_number": 28,
+    "specific_clause": "ISO 21448:2022 Clause 3.12 (Insufficiency of Specification) & Cl. 7.3.1",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "While traveling through a highway work zone with non-standard yellow/black chevron cones and missing dashed lane lines, the lateral path planner must detect lane boundary ambiguity without sensor hardware failure, prevent erratic steering jerks, disengage active lane centering with an audible handover prompt, and request immediate driver steering resumption.",
+    "operational_design_domain": {
+      "speed_range_kph": [40.0, 80.0],
+      "road_type": "Construction zone with ambiguous, non-standard cones and stripped paint",
+      "environmental_conditions": "Daylight, irregular construction infrastructure"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 160.0]},
+        {"name": "LaneMarkingConfidence_pct", "data_type": "float", "unit": "%", "valid_range": [0.0, 100.0]},
+        {"name": "PylonClusterDetected_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "PathCurvatureVariance", "data_type": "float", "unit": "var", "valid_range": [0.0, 10.0]}
+      ],
+      "output_signals": [
+        {"name": "SteeringAssistanceActive_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "DriverHandoverRequest_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "MaxSteeringJerk_degps3", "data_type": "float", "unit": "deg/s^3", "valid_range": [0.0, 20.0]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-SOTIF-INFRA-01",
+        "operational_mode": "Specification_Gap_Management",
+        "description": "Recognize unmodeled road infrastructure geometries and smoothly hand over lateral authority"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-SOTIF-008",
+        "parent_sub_intent_id": "SUB-SOTIF-INFRA-01",
+        "statement": "When LaneMarkingConfidence_pct drops below 25.0% and PathCurvatureVariance >= 3.0 in presence of PylonClusterDetected_flag == true, SteeringAssistanceActive_flag shall disengage smoothly with MaxSteeringJerk_degps3 <= 5.0 deg/s^3 and DriverHandoverRequest_flag shall assert true within an FTTI of 80 ms.",
+        "preconditions": "VehSpd_kph >= 40.0 and PylonClusterDetected_flag == true",
+        "trigger": "LaneMarkingConfidence_pct < 25.0 and PathCurvatureVariance >= 3.0",
+        "postconditions": "SteeringAssistanceActive_flag == false and DriverHandoverRequest_flag == true and MaxSteeringJerk_degps3 <= 5.0",
+        "timing_ftti_ms": 80,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-SOTIF-008",
+        "parent_req_id": "REQ-SYS2-SOTIF-008",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 60.0,
+          "LaneMarkingConfidence_pct": 18.0,
+          "PylonClusterDetected_flag": true,
+          "PathCurvatureVariance": 4.2
+        },
+        "expected_assertions": "SteeringAssistanceActive_flag == false and DriverHandoverRequest_flag == true and MaxSteeringJerk_degps3 <= 5.0",
+        "tolerances": { "response_time_max_ms": 80 }
+      }
+    ]
+  }
+}

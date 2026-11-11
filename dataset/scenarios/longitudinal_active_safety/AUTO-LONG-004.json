@@ -1,0 +1,73 @@
+{
+  "scenario_id": "AUTO-LONG-004",
+  "metadata": {
+    "domain": "ADAS",
+    "sub_system": "Longitudinal Control",
+    "target_feature": "High-Speed Severe Deceleration (12m Headway)",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "final-rule-automatic-emergency-braking-systems-light-vehicles_web-version",
+    "doc_number": 20,
+    "specific_clause": "NHTSA FMVSS 127 Section III.H.3 & Appendix A",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "The vehicle shall provide maximum emergency deceleration when traveling at high highway speeds (80 km/h) behind a lead vehicle that suddenly executes severe braking of 0.5g at an initial headway of 12 meters, completely avoiding collision without driver intervention.",
+    "operational_design_domain": {
+      "speed_range_kph": [70.0, 85.0],
+      "road_type": "Straight dry asphalt, level slope, peak braking coefficient >= 0.9",
+      "environmental_conditions": "Clear, dry pavement, ambient illumination > 1000 lux"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 200.0]},
+        {"name": "LeadTargetDist_m", "data_type": "float", "unit": "m", "valid_range": [0.0, 150.0]},
+        {"name": "LeadTargetDecel_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [-9.81, 0.0]},
+        {"name": "DriverBrakePedal_pct", "data_type": "float", "unit": "%", "valid_range": [0.0, 100.0]}
+      ],
+      "output_signals": [
+        {"name": "FCW_WarnState", "data_type": "enum", "unit": "enum", "valid_range": ["OFF", "STANDBY", "ACOUSTIC_OPTICAL"]},
+        {"name": "AEB_DecelRequest_mps2", "data_type": "float", "unit": "m/s^2", "valid_range": [0.0, 9.81]},
+        {"name": "AEB_HoldStatus", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-HDECEL-01",
+        "operational_mode": "Emergency_Severe_Deceleration",
+        "description": "Rapid hydraulic brake pre-fill and maximum deceleration request upon detecting severe lead vehicle deceleration"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-HDECEL-001",
+        "parent_sub_intent_id": "SUB-HDECEL-01",
+        "statement": "When VehSpd_kph is >= 80.0 km/h and LeadTargetDist_m <= 12.0 m while LeadTargetDecel_mps2 <= -4.9 m/s^2, AEB_DecelRequest_mps2 shall assert >= 7.5 m/s^2 within an FTTI of 80 ms.",
+        "preconditions": "VehSpd_kph >= 79.0 and LeadTargetDist_m <= 12.0",
+        "trigger": "LeadTargetDecel_mps2 <= -4.9",
+        "postconditions": "AEB_DecelRequest_mps2 >= 7.5",
+        "timing_ftti_ms": 80,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-HDECEL-001",
+        "parent_req_id": "REQ-SYS2-HDECEL-001",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 80.0,
+          "LeadTargetDist_m": 12.0,
+          "LeadTargetDecel_mps2": -4.9,
+          "DriverBrakePedal_pct": 0.0
+        },
+        "expected_assertions": "AEB_DecelRequest_mps2 >= 7.5",
+        "tolerances": { "decel_tolerance_mps2": 0.3, "response_time_max_ms": 80 }
+      }
+    ]
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "scenario_id": "AUTO-SOTIF-002",
+  "metadata": {
+    "domain": "System Safety",
+    "sub_system": "SOTIF / Sensor Degraded",
+    "target_feature": "Millimeter-Wave Radar Attenuation Under Heavy Rain",
+    "target_asil": "ASIL_B",
+    "v_model_scope": ["SYS.2", "SYS.5"]
+  },
+  "regulatory_provenance": {
+    "primary_source_doc": "ISO 21448:2022",
+    "doc_number": 28,
+    "specific_clause": "ISO 21448:2022 Clause 7.3.3 & ISO 26262-4 FTTI",
+    "benchmark_role": "Full Top-V Tier"
+  },
+  "input_context": {
+    "user_intent": "When driving through torrential downpours (> 30 mm/hr precipitation) where water droplets create high radar backscatter noise and signal attenuation, the 77 GHz radar must detect elevated noise floor clutter, suppress spurious ghost targets, reduce maximum detection range boundaries, and prevent phantom emergency braking.",
+    "operational_design_domain": {
+      "speed_range_kph": [40.0, 100.0],
+      "road_type": "Wet asphalt expressway with surface water pooling",
+      "environmental_conditions": "Heavy rainfall rate > 30 mm/h, spray from preceding vehicles"
+    },
+    "interface_signals": {
+      "input_signals": [
+        {"name": "VehSpd_kph", "data_type": "float", "unit": "km/h", "valid_range": [0.0, 180.0]},
+        {"name": "RainfallRate_mmph", "data_type": "float", "unit": "mm/h", "valid_range": [0.0, 100.0]},
+        {"name": "RadarNoiseFloor_dBm", "data_type": "float", "unit": "dBm", "valid_range": [-120.0, -40.0]},
+        {"name": "RadarTargetSNR_dB", "data_type": "float", "unit": "dB", "valid_range": [0.0, 50.0]}
+      ],
+      "output_signals": [
+        {"name": "RadarMaxTrackingRange_m", "data_type": "float", "unit": "m", "valid_range": [20.0, 200.0]},
+        {"name": "PhantomBrakeSuppressionActive_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]},
+        {"name": "RadarDegradedAlert_flag", "data_type": "boolean", "unit": "bool", "valid_range": [0, 1]}
+      ]
+    }
+  },
+  "ground_truth": {
+    "decomposition_targets": [
+      {
+        "sub_intent_id": "SUB-SOTIF-RAIN-01",
+        "operational_mode": "Clutter_Noise_Floor_Monitoring",
+        "description": "Quantify signal-to-noise ratio degradation caused by rain volume backscatter"
+      },
+      {
+        "sub_intent_id": "SUB-SOTIF-RAIN-02",
+        "operational_mode": "Dynamic_Boundary_De-rating",
+        "description": "Compress maximum verified perception horizon and suppress low-confidence targets"
+      }
+    ],
+    "formal_requirements": [
+      {
+        "req_id": "REQ-SYS2-SOTIF-003",
+        "parent_sub_intent_id": "SUB-SOTIF-RAIN-01",
+        "statement": "When RainfallRate_mmph >= 30.0 mm/h and RadarNoiseFloor_dBm rises above -75.0 dBm, RadarMaxTrackingRange_m shall de-rate from 180.0 m down to 70.0 m within 120 ms.",
+        "preconditions": "VehSpd_kph >= 40.0",
+        "trigger": "RainfallRate_mmph >= 30.0 and RadarNoiseFloor_dBm >= -75.0",
+        "postconditions": "RadarMaxTrackingRange_m <= 70.0 and RadarDegradedAlert_flag == true",
+        "timing_ftti_ms": 120,
+        "asil_rating": "ASIL_B"
+      },
+      {
+        "req_id": "REQ-SYS2-SOTIF-004",
+        "parent_sub_intent_id": "SUB-SOTIF-RAIN-02",
+        "statement": "While RadarDegradedAlert_flag is true, any radar target candidate with RadarTargetSNR_dB < 12.0 dB shall be suppressed from commanding emergency braking (PhantomBrakeSuppressionActive_flag == true).",
+        "preconditions": "RadarDegradedAlert_flag == true",
+        "trigger": "RadarTargetSNR_dB < 12.0",
+        "postconditions": "PhantomBrakeSuppressionActive_flag == true",
+        "timing_ftti_ms": 50,
+        "asil_rating": "ASIL_B"
+      }
+    ],
+    "verification_test_cases": [
+      {
+        "test_id": "TC-SYS5-SOTIF-003",
+        "parent_req_id": "REQ-SYS2-SOTIF-003",
+        "test_category": "Nominal_Operational",
+        "stimulus_vector": {
+          "VehSpd_kph": 70.0,
+          "RainfallRate_mmph": 35.0,
+          "RadarNoiseFloor_dBm": -72.0,
+          "RadarTargetSNR_dB": 18.0
+        },
+        "expected_assertions": "RadarMaxTrackingRange_m <= 70.0 and RadarDegradedAlert_flag == true",
+        "tolerances": { "range_tolerance_m": 5.0, "response_time_max_ms": 120 }
+      },
+      {
+        "test_id": "TC-SYS5-SOTIF-004",
+        "parent_req_id": "REQ-SYS2-SOTIF-004",
+        "test_category": "Boundary_Equivalence",
+        "stimulus_vector": {
+          "VehSpd_kph": 70.0,
+          "RainfallRate_mmph": 40.0,
+          "RadarNoiseFloor_dBm": -70.0,
+          "RadarTargetSNR_dB": 10.5
+        },
+        "expected_assertions": "PhantomBrakeSuppressionActive_flag == true",
+        "tolerances": { "response_time_max_ms": 50 }
+      }
+    ]
+  }
+}
