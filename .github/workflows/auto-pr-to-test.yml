@@ -1,0 +1,36 @@
+name: Auto Create PR to test
+
+on:
+  push:
+    branches-ignore:
+      - test
+      - main
+      - master
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for existing PR and create if missing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          SOURCE_BRANCH: ${{ github.ref_name }}
+        run: |
+          # Check if an open PR already exists from the current branch into test
+          EXISTING_PR=$(gh pr list --base test --head "$SOURCE_BRANCH" --state open --json number --jq '.[0].number')
+
+          if [ -z "$EXISTING_PR" ]; then
+            echo "No open PR found from $SOURCE_BRANCH to test. Creating one..."
+            gh pr create \
+              --base test \
+              --head "$SOURCE_BRANCH" \
+              --title "Merge $SOURCE_BRANCH into test" \
+              --body "Automated pull request triggered by new commits on \`$SOURCE_BRANCH\`."
+          else
+            echo "Open PR #$EXISTING_PR already exists for $SOURCE_BRANCH -> test. Skipping creation."
+          fi
