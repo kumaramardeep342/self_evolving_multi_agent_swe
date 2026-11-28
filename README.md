@@ -16,11 +16,25 @@ dataset/
 │   ├── AUTO-CRUISE-001.json
 │   └── AUTO-SOTIF-001.json
 └── scripts/
-│    ├── validate_scenarios.py    # Asserts schema, signal types, and G_trace
-│    └── compile_dataset.py       # Combines individual files into dataset.json
-└── results/                      # Scripts run results
-└── archive/                      # Not in use
+│    └── compile_dataset.py             # Combines individual files into dataset.json
+│    └── count_per_scenario.py          # Decomposition, Requirements and Tescase Count for each scenario's
+│    └── dataset_summary.py             # Summary of all the scenario's
+│    └── test_category_count_debug.py   # For scenario's debugging
+│    ├── validate_scenarios.py          # Asserts schema, signal types, and G_trace
+└── results/                            # Scripts run results
+└── archive/                            # Not in use
+```
 
+## run the scripts
+```plaintext
+cd ~/projects/self_evolving_multi_agent_swe
+python dataset/scripts/count_per_scenario.py
+python dataset/scripts/dataset_summary.py
+python dataset/scripts/test_category_count_debug.py
+
+cd ~/projects/self_evolving_multi_agent_swe/dataset/scripts
+python compile_dataset.py
+python validate_scenarios.py
 ```
 
 

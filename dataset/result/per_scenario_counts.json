@@ -1,0 +1,372 @@
+{
+  "total_scenarios": 40,
+  "totals": {
+    "decomposition_targets": 63,
+    "formal_requirements": 49,
+    "verification_test_cases": 56,
+    "decomposition_targets_plus_formal_requirements": 112,
+    "decomp_plus_reqs_plus_tests": 168
+  },
+  "scenarios": [
+    {
+      "index": 1,
+      "scenario_id": "AUTO-CRUISE-001",
+      "decomposition_targets": 2,
+      "formal_requirements": 2,
+      "verification_test_cases": 2,
+      "decomposition_targets_plus_formal_requirements": 4,
+      "decomp_plus_reqs_plus_tests": 6
+    },
+    {
+      "index": 2,
+      "scenario_id": "AUTO-CRUISE-002",
+      "decomposition_targets": 1,
+      "formal_requirements": 2,
+      "verification_test_cases": 2,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 5
+    },
+    {
+      "index": 3,
+      "scenario_id": "AUTO-CRUISE-003",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 4
+    },
+    {
+      "index": 4,
+      "scenario_id": "AUTO-CRUISE-004",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 5,
+      "scenario_id": "AUTO-CRUISE-005",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 4
+    },
+    {
+      "index": 6,
+      "scenario_id": "AUTO-CRUISE-006",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 7,
+      "scenario_id": "AUTO-CRUISE-007",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 8,
+      "scenario_id": "AUTO-CRUISE-008",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 4
+    },
+    {
+      "index": 9,
+      "scenario_id": "AUTO-LAT-001",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 3,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 6
+    },
+    {
+      "index": 10,
+      "scenario_id": "AUTO-LAT-002",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 4
+    },
+    {
+      "index": 11,
+      "scenario_id": "AUTO-LAT-003",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 4
+    },
+    {
+      "index": 12,
+      "scenario_id": "AUTO-LAT-004",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 2,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 5
+    },
+    {
+      "index": 13,
+      "scenario_id": "AUTO-LAT-005",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 14,
+      "scenario_id": "AUTO-LAT-006",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 4
+    },
+    {
+      "index": 15,
+      "scenario_id": "AUTO-LAT-007",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 4
+    },
+    {
+      "index": 16,
+      "scenario_id": "AUTO-LAT-008",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 17,
+      "scenario_id": "AUTO-LAT-009",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 18,
+      "scenario_id": "AUTO-LAT-010",
+      "decomposition_targets": 2,
+      "formal_requirements": 2,
+      "verification_test_cases": 2,
+      "decomposition_targets_plus_formal_requirements": 4,
+      "decomp_plus_reqs_plus_tests": 6
+    },
+    {
+      "index": 19,
+      "scenario_id": "AUTO-LAT-011",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 2,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 5
+    },
+    {
+      "index": 20,
+      "scenario_id": "AUTO-LAT-012",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 2,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 5
+    },
+    {
+      "index": 21,
+      "scenario_id": "AUTO-LONG-001",
+      "decomposition_targets": 3,
+      "formal_requirements": 3,
+      "verification_test_cases": 4,
+      "decomposition_targets_plus_formal_requirements": 6,
+      "decomp_plus_reqs_plus_tests": 10
+    },
+    {
+      "index": 22,
+      "scenario_id": "AUTO-LONG-002",
+      "decomposition_targets": 3,
+      "formal_requirements": 2,
+      "verification_test_cases": 3,
+      "decomposition_targets_plus_formal_requirements": 5,
+      "decomp_plus_reqs_plus_tests": 8
+    },
+    {
+      "index": 23,
+      "scenario_id": "AUTO-LONG-003",
+      "decomposition_targets": 2,
+      "formal_requirements": 2,
+      "verification_test_cases": 2,
+      "decomposition_targets_plus_formal_requirements": 4,
+      "decomp_plus_reqs_plus_tests": 6
+    },
+    {
+      "index": 24,
+      "scenario_id": "AUTO-LONG-004",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 25,
+      "scenario_id": "AUTO-LONG-005",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 26,
+      "scenario_id": "AUTO-LONG-006",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 4
+    },
+    {
+      "index": 27,
+      "scenario_id": "AUTO-LONG-007",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 4
+    },
+    {
+      "index": 28,
+      "scenario_id": "AUTO-LONG-008",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 29,
+      "scenario_id": "AUTO-LONG-009",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 30,
+      "scenario_id": "AUTO-LONG-010",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 31,
+      "scenario_id": "AUTO-LONG-011",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 32,
+      "scenario_id": "AUTO-LONG-012",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 33,
+      "scenario_id": "AUTO-LONG-013",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 34,
+      "scenario_id": "AUTO-LONG-014",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 35,
+      "scenario_id": "AUTO-SOTIF-001",
+      "decomposition_targets": 2,
+      "formal_requirements": 2,
+      "verification_test_cases": 2,
+      "decomposition_targets_plus_formal_requirements": 4,
+      "decomp_plus_reqs_plus_tests": 6
+    },
+    {
+      "index": 36,
+      "scenario_id": "AUTO-SOTIF-002",
+      "decomposition_targets": 2,
+      "formal_requirements": 2,
+      "verification_test_cases": 2,
+      "decomposition_targets_plus_formal_requirements": 4,
+      "decomp_plus_reqs_plus_tests": 6
+    },
+    {
+      "index": 37,
+      "scenario_id": "AUTO-SOTIF-003",
+      "decomposition_targets": 2,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 3,
+      "decomp_plus_reqs_plus_tests": 4
+    },
+    {
+      "index": 38,
+      "scenario_id": "AUTO-SOTIF-004",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 39,
+      "scenario_id": "AUTO-SOTIF-005",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    },
+    {
+      "index": 40,
+      "scenario_id": "AUTO-SOTIF-006",
+      "decomposition_targets": 1,
+      "formal_requirements": 1,
+      "verification_test_cases": 1,
+      "decomposition_targets_plus_formal_requirements": 2,
+      "decomp_plus_reqs_plus_tests": 3
+    }
+  ]
+}
