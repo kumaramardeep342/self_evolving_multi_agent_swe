@@ -1,0 +1,135 @@
+=== verification_test_cases (All 40 Scenarios Combined) ===
++-------------------------+----------------+
+| Metric                  | Combined Count |
++-------------------------+----------------+
+| Total Scenarios         | 40             |
+| verification_test_cases | 56             |
++-------------------------+----------------+
+
+=== formal_requirements + decomposition_targets (All 40 Scenarios Combined) ===
++---------------------------------------------+----------------+
+| Artifact Group                              | Combined Count |
++---------------------------------------------+----------------+
+| formal_requirements                         | 49             |
+| decomposition_targets                       | 63             |
+| formal_requirements + decomposition_targets | 112            |
++---------------------------------------------+----------------+
+
+=== operational_mode (All 40 Scenarios Combined) ===
++---------------------------------------------------+-------+-----------+
+| Operational Mode                                  | Count | Share (%) |
++---------------------------------------------------+-------+-----------+
+| Collision_Warning_State                           | 1     | 1.6%      |
+| Autonomous_Emergency_Braking                      | 1     | 1.6%      |
+| Driver_Override_Suppression                       | 1     | 1.6%      |
+| Other (Headway_Tracking_Regulation)               | 1     | 1.6%      |
+| Other (Standstill_Brake_Hold)                     | 1     | 1.6%      |
+| Other (Auto_Drive_Off_Arbitration)                | 1     | 1.6%      |
+| Other (Speed_Limit_Acquisition_and_Prompt)        | 1     | 1.6%      |
+| Other (Anticipatory_Speed_Adjustment)             | 1     | 1.6%      |
+| Other (Curve_Dynamics_Calculation)                | 1     | 1.6%      |
+| Other (CutIn_Target_Early_Acquisition)            | 1     | 1.6%      |
+| Other (Active_Brake_Distance_Restoration)         | 1     | 1.6%      |
+| Other (Unmasked_Target_Emergency_Transition)      | 1     | 1.6%      |
+| Other (Collaborative_Steering_Control)            | 1     | 1.6%      |
+| Other (Driver_Availability_Escalation)            | 1     | 1.6%      |
+| Other (Minimum_Risk_Controlled_Stop)              | 1     | 1.6%      |
+| Other (Lane_Boundary_Perception)                  | 1     | 1.6%      |
+| Other (Unintentional_Drift_Warning)               | 1     | 1.6%      |
+| Other (Solid_Boundary_Drift_Identification)       | 1     | 1.6%      |
+| Other (Spatial_Warning_Generation)                | 1     | 1.6%      |
+| Other (Departure_Trajectory_Prediction)           | 1     | 1.6%      |
+| Other (Heading_Correction_Actuation)              | 1     | 1.6%      |
+| Other (Physical_Road_Edge_Perception)             | 1     | 1.6%      |
+| Other (Emergency_Edge_Avoidance_Intervention)     | 1     | 1.6%      |
+| Other (High_Speed_Edge_Correction)                | 1     | 1.6%      |
+| Other (Oncoming_Traffic_Threat_Assessment)        | 1     | 1.6%      |
+| Other (Autonomous_Evasive_Steering)               | 1     | 1.6%      |
+| Other (Overtaking_Blind_Zone_Tracking)            | 1     | 1.6%      |
+| Other (Evasive_Drift_Suppression)                 | 1     | 1.6%      |
+| Other (Motorcyclist_Classification_and_Clearance) | 1     | 1.6%      |
+| Other (Overtaking_Motorcycle_Avoidance)           | 1     | 1.6%      |
+| Other (Adjacent_Zone_Presence_Monitoring)         | 1     | 1.6%      |
+| Other (Warning_Escalation)                        | 1     | 1.6%      |
+| Other (Rear_TTC_Calculation)                      | 1     | 1.6%      |
+| Other (Closing_Vehicle_Alert_Trigger)             | 1     | 1.6%      |
+| Other (Driver_Override_Detection)                 | 1     | 1.6%      |
+| Other (Driver_State_Link_Modulation)              | 1     | 1.6%      |
+| Other (Kinematic_Closing_Assessment)              | 1     | 1.6%      |
+| Other (Collision_Warning_Alert)                   | 1     | 1.6%      |
+| Other (Emergency_Deceleration_Intervention)       | 1     | 1.6%      |
+| Other (Lead_Deceleration_Tracking)                | 1     | 1.6%      |
+| Other (Dynamic_Braking_Intervention)              | 1     | 1.6%      |
+| Other (Emergency_Severe_Deceleration)             | 1     | 1.6%      |
+| Other (Brake_Assist_Supplementation)              | 1     | 1.6%      |
+| Other (Pedestrian_Longitudinal_Tracking)          | 1     | 1.6%      |
+| Other (Emergency_Pedestrian_Braking)              | 1     | 1.6%      |
+| Other (Occluded_Pedestrian_Acquisition)           | 1     | 1.6%      |
+| Other (Emergency_Brake_Actuation)                 | 1     | 1.6%      |
+| Other (Farside_Crossing_Decel)                    | 1     | 1.6%      |
+| Other (Bicyclist_Longitudinal_Braking)            | 1     | 1.6%      |
+| Other (Crossing_Bicycle_Intervention)             | 1     | 1.6%      |
+| Other (Farside_Scooter_Collision_Avoidance)       | 1     | 1.6%      |
+| Other (Low_Light_Pedestrian_Braking)              | 1     | 1.6%      |
+| Other (False_Positive_Suppression)                | 1     | 1.6%      |
+| Other (Corridor_Clearance_Verification)           | 1     | 1.6%      |
+| Other (Optical_Blindness_Detection)               | 1     | 1.6%      |
+| Other (Graceful_Degradation_Transition)           | 1     | 1.6%      |
+| Other (Clutter_Noise_Floor_Monitoring)            | 1     | 1.6%      |
+| Other (Dynamic_Boundary_De-rating)                | 1     | 1.6%      |
+| Other (Optical_Blockage_Discrimination)           | 1     | 1.6%      |
+| Other (Controlled_Disengagement)                  | 1     | 1.6%      |
+| Other (Cross_Modal_Plausibility_Gate)             | 1     | 1.6%      |
+| Other (Power_Supply_Integrity_Supervision)        | 1     | 1.6%      |
+| Other (Specification_Gap_Management)              | 1     | 1.6%      |
+| Total                                             | 63    | 100.0%    |
++---------------------------------------------------+-------+-----------+
+
+=== test_category (All 40 Scenarios Combined) ===
++--------------------------+-------+-----------+
+| Test Category            | Count | Share (%) |
++--------------------------+-------+-----------+
+| Nominal_Operational      | 32    | 57.1%     |
+| Boundary_Equivalence     | 20    | 35.7%     |
+| Negative_Fault_Injection | 4     | 7.1%      |
+| Timing_Latency_Tolerance | 0     | 0.0%      |
+| Total                    | 56    | 100.0%    |
++--------------------------+-------+-----------+
+
+=== target_asil (All 40 Scenarios Combined) ===
++-------------+----------------+-----------+
+| Target ASIL | Scenario Count | Share (%) |
++-------------+----------------+-----------+
+| QM          | 4              | 10.0%     |
+| ASIL_A      | 4              | 10.0%     |
+| ASIL_B      | 18             | 45.0%     |
+| ASIL_C      | 11             | 27.5%     |
+| ASIL_D      | 3              | 7.5%      |
+| Total       | 40             | 100.0%    |
++-------------+----------------+-----------+
+
+=== Signal Count per Scenario (All 40 Scenarios Combined) ===
++---------------------+----------------+-----------+
+| Signal Count Bucket | Scenario Count | Share (%) |
++---------------------+----------------+-----------+
+| 3 to 4 Signals      | 0              | 0.0%      |
+| 5 to 6 Signals      | 21             | 52.5%     |
+| 7 to 8 Signals      | 19             | 47.5%     |
+| 9+ Signals          | 0              | 0.0%      |
+| Other (<3)          | 0              | 0.0%      |
+| Total               | 40             | 100.0%    |
++---------------------+----------------+-----------+
+
+=== Fault-Tolerant Time Interval (FTTI) Spectrum (All 40 Scenarios Combined) ===
++---------------------------+-------------------+-----------+
+| FTTI Spectrum Band        | Requirement Count | Share (%) |
++---------------------------+-------------------+-----------+
+| Ultra-Critical (<= 20 ms) | 1                 | 2.0%      |
+| High (20-50 ms)           | 28                | 57.1%     |
+| Moderate (50-100 ms)      | 19                | 38.8%     |
+| Supervisory (> 100 ms)    | 1                 | 2.0%      |
+| Missing / Unparsed        | 0                 | 0.0%      |
+| Total                     | 49                | 100.0%    |
++---------------------------+-------------------+-----------+
+
+[Warning] Non-canonical label values encountered: {'Headway_Tracking_Regulation': 1, 'Standstill_Brake_Hold': 1, 'Auto_Drive_Off_Arbitration': 1, 'Speed_Limit_Acquisition_and_Prompt': 1, 'Anticipatory_Speed_Adjustment': 1, 'Curve_Dynamics_Calculation': 1, 'CutIn_Target_Early_Acquisition': 1, 'Active_Brake_Distance_Restoration': 1, 'Unmasked_Target_Emergency_Transition': 1, 'Collaborative_Steering_Control': 1, 'Driver_Availability_Escalation': 1, 'Minimum_Risk_Controlled_Stop': 1, 'Lane_Boundary_Perception': 1, 'Unintentional_Drift_Warning': 1, 'Solid_Boundary_Drift_Identification': 1, 'Spatial_Warning_Generation': 1, 'Departure_Trajectory_Prediction': 1, 'Heading_Correction_Actuation': 1, 'Physical_Road_Edge_Perception': 1, 'Emergency_Edge_Avoidance_Intervention': 1, 'High_Speed_Edge_Correction': 1, 'Oncoming_Traffic_Threat_Assessment': 1, 'Autonomous_Evasive_Steering': 1, 'Overtaking_Blind_Zone_Tracking': 1, 'Evasive_Drift_Suppression': 1, 'Motorcyclist_Classification_and_Clearance': 1, 'Overtaking_Motorcycle_Avoidance': 1, 'Adjacent_Zone_Presence_Monitoring': 1, 'Warning_Escalation': 1, 'Rear_TTC_Calculation': 1, 'Closing_Vehicle_Alert_Trigger': 1, 'Driver_Override_Detection': 1, 'Driver_State_Link_Modulation': 1, 'Kinematic_Closing_Assessment': 1, 'Collision_Warning_Alert': 1, 'Emergency_Deceleration_Intervention': 1, 'Lead_Deceleration_Tracking': 1, 'Dynamic_Braking_Intervention': 1, 'Emergency_Severe_Deceleration': 1, 'Brake_Assist_Supplementation': 1, 'Pedestrian_Longitudinal_Tracking': 1, 'Emergency_Pedestrian_Braking': 1, 'Occluded_Pedestrian_Acquisition': 1, 'Emergency_Brake_Actuation': 1, 'Farside_Crossing_Decel': 1, 'Bicyclist_Longitudinal_Braking': 1, 'Crossing_Bicycle_Intervention': 1, 'Farside_Scooter_Collision_Avoidance': 1, 'Low_Light_Pedestrian_Braking': 1, 'False_Positive_Suppression': 1, 'Corridor_Clearance_Verification': 1, 'Optical_Blindness_Detection': 1, 'Graceful_Degradation_Transition': 1, 'Clutter_Noise_Floor_Monitoring': 1, 'Dynamic_Boundary_De-rating': 1, 'Optical_Blockage_Discrimination': 1, 'Controlled_Disengagement': 1, 'Cross_Modal_Plausibility_Gate': 1, 'Power_Supply_Integrity_Supervision': 1, 'Specification_Gap_Management': 1}
